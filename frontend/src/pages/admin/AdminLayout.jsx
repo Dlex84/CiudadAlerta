@@ -8,6 +8,8 @@ const GROUPS = [
     title: 'Operaciones',
     items: [
       { to: '/admin/reportes', label: 'Reportes', module: 'operaciones', also: ['/admin/reporte'] },
+      { to: '/admin/aprobaciones', label: 'Aprobaciones', module: 'aprobaciones' },
+      { to: '/admin/incidencias', label: 'Incidencias', module: 'incidencias' },
       { to: '/admin/bitacora', label: 'Bitácora de cambios', module: 'bitacora' },
     ],
   },

@@ -13,8 +13,10 @@ import ResetPassword from './pages/ResetPassword.jsx';
 import Tracking from './pages/Tracking.jsx';
 import Welcome from './pages/Welcome.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
+import Approvals from './pages/admin/Approvals.jsx';
 import Audit from './pages/admin/Audit.jsx';
 import ChangeLog from './pages/admin/ChangeLog.jsx';
+import Incidents from './pages/admin/Incidents.jsx';
 import ReportDetail from './pages/admin/ReportDetail.jsx';
 import Reports from './pages/admin/Reports.jsx';
 import Roles from './pages/admin/Roles.jsx';
@@ -36,6 +38,8 @@ function adminHome(can) {
 const ADMIN_PAGES = {
   '/admin/reportes': [(q) => <Reports key={JSON.stringify(q)} query={q} />, 'operaciones'],
   '/admin/reporte': [(q) => <ReportDetail key={q.id} id={q.id} />, 'operaciones'],
+  '/admin/aprobaciones': [() => <Approvals />, 'aprobaciones'],
+  '/admin/incidencias': [() => <Incidents />, 'incidencias'],
   '/admin/bitacora': [(q) => <ChangeLog key={q.report ?? ''} query={q} />, 'bitacora'],
   '/admin/usuarios': [() => <Users />, 'usuarios'],
   '/admin/roles': [() => <Roles />, 'roles'],
