@@ -21,7 +21,7 @@ const DESCRIPTION = { field: 'description', label: 'La descripción', min: 10, m
 const LOCATION = { field: 'location', label: 'La ubicación', min: 3, max: 200 };
 const REASON = { field: 'reason', label: 'El motivo', min: 3, max: 500 };
 
-export function createReportsService({ repos, ctx, changeLog, clock = () => new Date() }) {
+export function createReportsService({ repos, ctx, changeLog, notifications, clock = () => new Date() }) {
   /** Siguientes estados que este usuario puede elegir ahora, con el motivo si una regla lo impide (para los botones). */
   async function allowedTransitions(actor, report) {
     if (!seesAllReports(actor) || !can(actor.permissions, 'operaciones', 'update')) return [];
@@ -138,6 +138,15 @@ export function createReportsService({ repos, ctx, changeLog, clock = () => new 
         if (from === 'en_proceso') {
           const rounds = (await repos.approvals.listByReport(report.id)).map((a) => a.round);
           if (rounds.length) await repos.approvals.cancelPending(report.id, Math.max(...rounds));
+        }
+        if (report.createdBy !== actor.user.id) {
+          await notifications.notify({
+            userId: report.createdBy,
+            kind: 'status_changed',
+            title: `Tu reporte ${report.code} está ${statusLabel(to).toLowerCase()}`,
+            body: reason ? `${report.title}. Motivo: ${reason}` : report.title,
+            reportId: report.id,
+          });
         }
         return {
           value: await getDetail(actor, report.id),

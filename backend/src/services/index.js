@@ -1,6 +1,7 @@
 import { createAuditService } from './audit.service.js';
 import { createAuthService } from './auth.service.js';
 import { createChangeLogService } from './changelog.service.js';
+import { createNotificationsService } from './notifications.service.js';
 import { createOpsContext } from './operations-context.js';
 import { createProfileService } from './profile.service.js';
 import { createReportsService } from './reports.service.js';
@@ -13,7 +14,8 @@ export function createServices(deps) {
   // Épica 2: base común compartida por los servicios de operaciones.
   const ctx = createOpsContext(deps);
   const changeLog = createChangeLogService(deps);
-  const ops = { ...deps, ctx, changeLog };
+  const notifications = createNotificationsService(deps);
+  const ops = { ...deps, ctx, changeLog, notifications };
   return {
     audit,
     auth: createAuthService({ ...deps, audit }),
@@ -22,6 +24,7 @@ export function createServices(deps) {
     profile: createProfileService(deps),
     // Épica 2
     changeLog,
+    notifications,
     reports: createReportsService(ops),
   };
 }

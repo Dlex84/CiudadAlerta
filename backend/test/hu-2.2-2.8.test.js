@@ -109,6 +109,14 @@ describe('HU-2.2 Registro y seguimiento de reportes', () => {
     assert.deepEqual(staff.data.allowedTransitions.map((t) => t.to), ['en_proceso', 'rechazado']);
   });
 
+  test('avisa al ciudadano cuando su reporte cambia de estado (pantalla 14)', async () => {
+    const r = await newReport(w.citizen.c);
+    await w.sup.c.post(`/api/reports/${r.id}/transitions`, { to: 'validado' });
+    const n = await w.citizen.c.get('/api/notifications');
+    assert.equal(n.data.items[0].title, `Tu reporte ${r.code} está validado`);
+    assert.equal(n.data.items[0].reportId, r.id);
+  });
+
   test('permisos: el ciudadano no cambia estados y el operador solo trabaja en lo que tiene asignado', async () => {
     const r = await newReport(w.citizen.c);
     assert.equal((await w.citizen.c.post(`/api/reports/${r.id}/transitions`, { to: 'validado' })).status, 403);
