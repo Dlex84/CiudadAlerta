@@ -1,6 +1,8 @@
 // Persona A — HU-2.2 Registro y seguimiento de operaciones · HU-2.8 Bitácora de cambios
 import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
+import { redact } from '../src/services/changelog.service.js';
+import { PASSWORD } from './helpers/app.js';
 import { newReport, opsWorld, reportBody } from './helpers/ops.js';
 
 describe('HU-2.2 Registro y seguimiento de reportes', () => {
@@ -129,5 +131,76 @@ describe('HU-2.2 Registro y seguimiento de reportes', () => {
     const p = await w.sup.c.get('/api/reports?limit=2&page=1');
     assert.equal(p.data.items.length, 2);
     assert.ok(p.data.total > 2);
+  });
+});
+
+describe('HU-2.8 Bitácora de cambios', () => {
+  let w, report;
+  before(async () => {
+    w = await opsWorld();
+    report = await newReport(w.citizen.c);
+    await w.sup.c.post(`/api/reports/${report.id}/transitions`, { to: 'validado' });
+    await w.sup.c.post(`/api/reports/${report.id}/transitions`, { to: 'resuelto' }); // intento inválido
+  });
+  after(() => w.app.close());
+
+  test('registra actor, fecha y hora, entidad, acción y resultado de cada cambio', async () => {
+    const res = await w.auditor.c.get(`/api/changelog?report=${report.code}`);
+    assert.equal(res.status, 200);
+    const [rejected, change, create] = res.data.items;
+    assert.equal(create.action, 'create');
+    assert.equal(create.entity, 'report');
+    assert.equal(create.actorName, 'Prueba ciudadano');
+    assert.equal(create.result, 'success');
+    assert.equal(create.reportCode, report.code);
+    assert.ok(create.createdAt);
+
+    assert.equal(change.action, 'status_change');
+    assert.equal(change.actorId, w.sup.user.id);
+    assert.deepEqual(change.oldValues, { status: 'reportado' }, 'guarda el valor anterior');
+    assert.deepEqual(change.newValues, { status: 'validado' }, 'y el nuevo');
+
+    assert.equal(rejected.result, 'rejected', 'también registra los intentos que las reglas rechazan');
+    assert.equal(rejected.newValues.error, 'invalid_transition');
+  });
+
+  test('busca por reporte, usuario y periodo', async () => {
+    const other = await newReport(w.citizen2.c);
+    const byReport = await w.auditor.c.get(`/api/changelog?report=${other.code}`);
+    assert.equal(byReport.data.total, 1);
+    const byUser = await w.auditor.c.get(`/api/changelog?actorId=${w.sup.user.id}`);
+    assert.ok(byUser.data.items.length >= 2);
+    assert.ok(byUser.data.items.every((i) => i.actorId === w.sup.user.id));
+    const day = w.time.now.toISOString().slice(0, 10);
+    assert.ok((await w.auditor.c.get(`/api/changelog?from=${day}&to=${day}`)).data.total >= 4);
+    assert.equal((await w.auditor.c.get('/api/changelog?from=2020-01-01&to=2020-01-02')).data.total, 0);
+    assert.equal((await w.auditor.c.get('/api/changelog?entity=report&action=create')).data.total, 2);
+    assert.equal((await w.auditor.c.get('/api/changelog?report=CA-9999')).data.total, 0);
+    assert.equal((await w.auditor.c.get('/api/changelog?entity=otra')).data.error.code, 'invalid_entity');
+    assert.equal((await w.auditor.c.get('/api/changelog?from=2026-02-01&to=2026-01-01')).data.error.code, 'invalid_period');
+  });
+
+  test('no se puede modificar ni eliminar: no hay endpoints y el repositorio no lo permite', async () => {
+    const { items } = (await w.auditor.c.get('/api/changelog')).data;
+    const id = items[0].id;
+    for (const m of ['PUT', 'PATCH', 'DELETE']) {
+      const res = await w.auditor.c.request(m, `/api/changelog/${id}`, { body: {} });
+      assert.equal(res.status, 404, `${m} no existe`);
+    }
+    assert.equal((await w.auditor.c.request('DELETE', '/api/changelog')).status, 404);
+    assert.deepEqual(Object.keys(w.app.repos.changeLog).sort(), ['append', 'search']);
+  });
+
+  test('no guarda contraseñas ni tokens', async () => {
+    assert.deepEqual(redact({ password: 'x', nested: { resetToken: 'y', ok: 1 }, passwordHash: 'z' }),
+      { password: '[oculto]', nested: { resetToken: '[oculto]', ok: 1 }, passwordHash: '[oculto]' });
+    const dump = JSON.stringify((await w.auditor.c.get('/api/changelog?limit=100')).data);
+    assert.ok(!dump.includes(PASSWORD));
+  });
+
+  test('solo quien tiene permiso de bitácora la consulta', async () => {
+    assert.equal((await w.op.c.get('/api/changelog')).status, 403);
+    assert.equal((await w.citizen.c.get('/api/changelog')).status, 403);
+    assert.equal((await w.manager.c.get('/api/changelog')).status, 200);
   });
 });

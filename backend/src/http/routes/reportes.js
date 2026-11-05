@@ -14,4 +14,7 @@ export function reportesRoutes(r, { services, auth, needs, needsAny }) {
   r.post('/api/reports/:id/transitions', ...needs('operaciones', 'update'), async (ctx) =>
     ok(await services.reports.transition(ctx.principal, ctx.params.id, await ctx.json())),
   );
+
+  // Bitácora: solo consulta. No existen rutas para modificarla ni borrarla.
+  r.get('/api/changelog', ...needs('bitacora', 'read'), async (ctx) => ok(await services.changeLog.search(ctx.query)));
 }
