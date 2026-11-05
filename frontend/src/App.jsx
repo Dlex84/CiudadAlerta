@@ -4,9 +4,12 @@ import { navigate, useRoute } from './router.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
+import MyReports from './pages/MyReports.jsx';
+import NewReport from './pages/NewReport.jsx';
 import Profile from './pages/Profile.jsx';
 import Register from './pages/Register.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
+import Tracking from './pages/Tracking.jsx';
 import Welcome from './pages/Welcome.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 import Audit from './pages/admin/Audit.jsx';
@@ -14,6 +17,7 @@ import Roles from './pages/admin/Roles.jsx';
 import Users from './pages/admin/Users.jsx';
 
 const PUBLIC = new Set(['/', '/login', '/registro', '/recuperar', '/restablecer']);
+const CITIZEN = new Set(['/inicio', '/perfil', '/reportes', '/reportes/nuevo', '/seguimiento']);
 
 /** Primera sección del panel a la que el rol tiene acceso. */
 function adminHome(can) {
@@ -22,6 +26,14 @@ function adminHome(can) {
   if (can('auditoria', 'read')) return '/admin/auditoria';
   return '/admin/perfil';
 }
+
+/** Rutas del panel: [componente, módulo que hay que poder consultar]. */
+const ADMIN_PAGES = {
+  '/admin/usuarios': [() => <Users />, 'usuarios'],
+  '/admin/roles': [() => <Roles />, 'roles'],
+  '/admin/auditoria': [() => <Audit />, 'auditoria'],
+  '/admin/perfil': [() => <><h1>Mi perfil</h1><Profile embedded /></>, null],
+};
 
 export default function App() {
   const { session, loading, can } = useAuth();
@@ -34,7 +46,7 @@ export default function App() {
     else if (session && PUBLIC.has(path) && path !== '/restablecer') redirect = session.redirectTo;
     else if (session && path === '/admin') redirect = adminHome(can);
     else if (session && path.startsWith('/admin') && session.redirectTo !== '/admin') redirect = '/inicio';
-    else if (session && (path === '/inicio' || path === '/perfil') && session.redirectTo === '/admin') redirect = '/admin';
+    else if (session && CITIZEN.has(path) && session.redirectTo === '/admin') redirect = '/admin';
   }
   useEffect(() => { if (redirect) navigate(redirect); }, [redirect]);
 
@@ -48,14 +60,23 @@ export default function App() {
     case '/restablecer': return <ResetPassword token={query.token} invitation={!!query.invitacion} />;
     case '/inicio': return <Home />;
     case '/perfil': return <Profile />;
-    case '/admin/usuarios': return can('usuarios', 'read') ? <AdminLayout path={path}><Users /></AdminLayout> : <NoAccess path={path} />;
-    case '/admin/roles': return can('roles', 'read') ? <AdminLayout path={path}><Roles /></AdminLayout> : <NoAccess path={path} />;
-    case '/admin/auditoria': return can('auditoria', 'read') ? <AdminLayout path={path}><Audit /></AdminLayout> : <NoAccess path={path} />;
-    case '/admin/perfil': return <AdminLayout path={path}><h1>Mi perfil</h1><Profile embedded /></AdminLayout>;
-    default: return <div className="auth-wrap"><div className="phone-card center">Página no encontrada. <a href="#/">Volver al inicio</a></div></div>;
+    case '/reportes': return <MyReports />;
+    case '/reportes/nuevo': return can('reportes', 'create') ? <NewReport /> : <MyReports />;
+    case '/seguimiento': return <Tracking key={query.id} id={query.id} isNew={!!query.nuevo} />;
   }
+
+  const page = ADMIN_PAGES[path];
+  if (page) {
+    const [render, module] = page;
+    return (
+      <AdminLayout path={path}>
+        {!module || can(module, 'read') ? render(query) : <NoAccess />}
+      </AdminLayout>
+    );
+  }
+  return <div className="auth-wrap"><div className="phone-card center">Página no encontrada. <a href="#/">Volver al inicio</a></div></div>;
 }
 
-function NoAccess({ path }) {
-  return <AdminLayout path={path}><h1>Sin acceso</h1><p className="muted">Tu rol no tiene permiso para ver esta sección.</p></AdminLayout>;
+function NoAccess() {
+  return <><h1>Sin acceso</h1><p className="muted">Tu rol no tiene permiso para ver esta sección.</p></>;
 }
