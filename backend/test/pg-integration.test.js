@@ -26,7 +26,7 @@ describe('PostgreSQL (integración)', { skip: !url ? 'define TEST_DATABASE_URL p
 
   test('roles del sistema sembrados con su matriz de permisos', async () => {
     const res = await admin.get('/api/roles');
-    assert.deepEqual(res.data.items.map((r) => r.code), ['super_admin', 'admin', 'supervisor', 'ciudadano']);
+    assert.deepEqual(res.data.items.map((r) => r.code), ['super_admin', 'admin', 'supervisor', 'operador', 'gerente', 'auditor', 'ciudadano']);
     const sup = res.data.items.find((r) => r.code === 'supervisor');
     const perms = await admin.get(`/api/roles/${sup.id}/permissions`);
     assert.equal(perms.data.permissions.find((p) => p.module === 'auditoria').read, true);

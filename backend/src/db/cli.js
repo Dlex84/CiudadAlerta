@@ -1,6 +1,6 @@
 // Uso: node src/db/cli.js <migrate|seed|setup>
 import { loadConfig } from '../config.js';
-import { seedSuperAdmin, seedSystemRoles } from '../domain/seed-data.js';
+import { seedOperationsCatalog, seedSuperAdmin, seedSystemRoles } from '../domain/seed-data.js';
 import { createPgRepos } from '../repositories/pg/index.js';
 import { migrate } from './migrate.js';
 import { createPool } from './pool.js';
@@ -19,6 +19,8 @@ try {
     const repos = createPgRepos(pool);
     await seedSystemRoles(repos);
     console.log('✔ roles del sistema listos');
+    await seedOperationsCatalog(repos);
+    console.log('✔ tipos de reporte, plazos y pasos de aprobación listos');
     const admin = await seedSuperAdmin(repos, config.seedAdmin);
     if (admin) console.log(`✔ Super Administrador creado: ${admin.email}`);
     else if (!config.seedAdmin.email) console.log('ℹ Define SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crear el primer Super Administrador.');
