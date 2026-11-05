@@ -13,3 +13,10 @@ export const requirePermission = (module, action) => (ctx) => {
     throw forbidden('forbidden', 'No tienes permiso para realizar esta acción.');
   }
 };
+
+/** Basta con uno de los permisos, p. ej. reportes.read (los propios) u operaciones.read (todos). */
+export const requireAnyPermission = (pairs) => (ctx) => {
+  if (!pairs.some(([module, action]) => can(ctx.principal.permissions, module, action))) {
+    throw forbidden('forbidden', 'No tienes permiso para realizar esta acción.');
+  }
+};
