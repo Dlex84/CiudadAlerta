@@ -13,6 +13,9 @@ import Tracking from './pages/Tracking.jsx';
 import Welcome from './pages/Welcome.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 import Audit from './pages/admin/Audit.jsx';
+import ChangeLog from './pages/admin/ChangeLog.jsx';
+import ReportDetail from './pages/admin/ReportDetail.jsx';
+import Reports from './pages/admin/Reports.jsx';
 import Roles from './pages/admin/Roles.jsx';
 import Users from './pages/admin/Users.jsx';
 
@@ -21,6 +24,7 @@ const CITIZEN = new Set(['/inicio', '/perfil', '/reportes', '/reportes/nuevo', '
 
 /** Primera sección del panel a la que el rol tiene acceso. */
 function adminHome(can) {
+  if (can('operaciones', 'read')) return '/admin/reportes';
   if (can('usuarios', 'read')) return '/admin/usuarios';
   if (can('roles', 'read')) return '/admin/roles';
   if (can('auditoria', 'read')) return '/admin/auditoria';
@@ -29,6 +33,9 @@ function adminHome(can) {
 
 /** Rutas del panel: [componente, módulo que hay que poder consultar]. */
 const ADMIN_PAGES = {
+  '/admin/reportes': [(q) => <Reports key={JSON.stringify(q)} query={q} />, 'operaciones'],
+  '/admin/reporte': [(q) => <ReportDetail key={q.id} id={q.id} />, 'operaciones'],
+  '/admin/bitacora': [(q) => <ChangeLog key={q.report ?? ''} query={q} />, 'bitacora'],
   '/admin/usuarios': [() => <Users />, 'usuarios'],
   '/admin/roles': [() => <Roles />, 'roles'],
   '/admin/auditoria': [() => <Audit />, 'auditoria'],
