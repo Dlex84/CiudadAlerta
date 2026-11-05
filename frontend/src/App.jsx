@@ -16,8 +16,10 @@ import AdminLayout from './pages/admin/AdminLayout.jsx';
 import Approvals from './pages/admin/Approvals.jsx';
 import Audit from './pages/admin/Audit.jsx';
 import ChangeLog from './pages/admin/ChangeLog.jsx';
+import Dashboard from './pages/admin/Dashboard.jsx';
 import Incidents from './pages/admin/Incidents.jsx';
 import OpsConfig from './pages/admin/OpsConfig.jsx';
+import OpsReport from './pages/admin/OpsReport.jsx';
 import ReportDetail from './pages/admin/ReportDetail.jsx';
 import Reports from './pages/admin/Reports.jsx';
 import Roles from './pages/admin/Roles.jsx';
@@ -28,6 +30,7 @@ const CITIZEN = new Set(['/inicio', '/perfil', '/reportes', '/reportes/nuevo', '
 
 /** Primera sección del panel a la que el rol tiene acceso. */
 function adminHome(can) {
+  if (can('indicadores', 'read')) return '/admin/panel';
   if (can('operaciones', 'read')) return '/admin/reportes';
   if (can('usuarios', 'read')) return '/admin/usuarios';
   if (can('roles', 'read')) return '/admin/roles';
@@ -37,10 +40,12 @@ function adminHome(can) {
 
 /** Rutas del panel: [componente, módulo que hay que poder consultar]. */
 const ADMIN_PAGES = {
+  '/admin/panel': [() => <Dashboard />, 'indicadores'],
   '/admin/reportes': [(q) => <Reports key={JSON.stringify(q)} query={q} />, 'operaciones'],
   '/admin/reporte': [(q) => <ReportDetail key={q.id} id={q.id} />, 'operaciones'],
   '/admin/aprobaciones': [() => <Approvals />, 'aprobaciones'],
   '/admin/incidencias': [() => <Incidents />, 'incidencias'],
+  '/admin/indicadores': [() => <OpsReport />, 'indicadores'],
   '/admin/bitacora': [(q) => <ChangeLog key={q.report ?? ''} query={q} />, 'bitacora'],
   '/admin/configuracion': [() => <OpsConfig />, 'configuracion'],
   '/admin/usuarios': [() => <Users />, 'usuarios'],
