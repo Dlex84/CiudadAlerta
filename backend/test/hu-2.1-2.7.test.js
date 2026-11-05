@@ -1,6 +1,7 @@
 // Persona D — HU-2.1 Panel de operaciones · HU-2.7 Reportes operativos
 import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
+import { csvCell } from '../src/services/indicators.service.js';
 import { approveClosure, newReport, opsWorld, toInProcess } from './helpers/ops.js';
 
 /**
@@ -86,5 +87,74 @@ describe('HU-2.1 Panel de operaciones', () => {
     assert.equal((await w.citizen.c.get('/api/dashboard')).status, 403);
     assert.equal((await w.op.c.get('/api/dashboard')).status, 200);
     assert.equal((await w.auditor.c.get('/api/dashboard')).status, 200);
+  });
+});
+
+describe('HU-2.7 Reportes operativos', () => {
+  let w, s;
+  before(async () => { w = await opsWorld(); s = await scenario(w); });
+  after(() => w.app.close());
+
+  test('calcula métricas, cada una con su definición escrita', async () => {
+    const res = await w.manager.c.get('/api/indicators/report');
+    assert.equal(res.status, 200);
+    const m = Object.fromEntries(res.data.metrics.map((x) => [x.key, x]));
+    for (const x of res.data.metrics) {
+      assert.ok(x.label && x.unit && x.definition.length > 20, `${x.key} tiene definición`);
+    }
+    assert.equal(m.created.value, 6);
+    assert.equal(m.resolved.value, 1);
+    assert.equal(m.rejected.value, 1);
+    assert.equal(m.open.value, 4);
+    assert.equal(m.resolutionRate.value, 20, '1 ÷ (6 − 1) × 100');
+    assert.equal(m.avgResolutionHours.value, 5);
+    assert.equal(m.onTimeRate.value, 100);
+    assert.equal(m.overdueOpen.value, 1);
+    assert.equal(m.openIncidents.value, 1);
+
+    const types = Object.fromEntries(res.data.byType.map((t) => [t.key, t]));
+    assert.equal(types.alumbrado.created, 5);
+    assert.equal(types.agua.overdueOpen, 1);
+    assert.equal(res.data.byAssignee.find((a) => a.key === w.op.user.id).label, 'Prueba operador');
+    assert.equal(res.data.byAssignee.find((a) => a.key === '—').label, 'Sin responsable');
+  });
+
+  test('incluye la fecha de generación y los filtros usados', async () => {
+    const day = s.t0.toISOString().slice(0, 10);
+    const res = await w.manager.c.get(`/api/indicators/report?from=${day}&typeCode=agua`);
+    assert.equal(res.data.generatedAt, w.time.now.toISOString());
+    assert.deepEqual(res.data.filters, { from: day, typeCode: 'agua' });
+    assert.equal(res.data.metrics.find((x) => x.key === 'created').value, 1);
+  });
+
+  test('exporta a CSV solo con permiso, con fecha de generación, filtros, definiciones y filas', async () => {
+    assert.equal((await w.op.c.get('/api/indicators/report.csv')).status, 403, 'consultar no implica exportar');
+    assert.equal((await w.auditor.c.get('/api/indicators/report.csv')).status, 403);
+    const res = await w.manager.c.get('/api/indicators/report.csv?typeCode=alumbrado');
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-type'), /^text\/csv/);
+    assert.match(res.headers.get('content-disposition'), /^attachment; filename="reporte-operativo-.*\.csv"$/);
+    const csv = res.data;
+    assert.ok(csv.startsWith('﻿') || csv.startsWith('Reporte'), 'UTF-8 con BOM para Excel');
+    assert.match(csv, new RegExp(`Generado,${w.time.now.toISOString()}`));
+    assert.match(csv, /Filtros,typeCode=alumbrado/);
+    assert.match(csv, /Tasa de resolución,25,%,/);
+    assert.match(csv, /Resueltos ÷ \(creados − rechazados\)/);
+    assert.ok(csv.includes(s.solved.code));
+    assert.ok(!csv.includes(s.water.code), 'respeta el filtro');
+
+    const log = await w.auditor.c.get('/api/changelog?entity=export');
+    assert.equal(log.data.items[0].newValues.filters.typeCode, 'alumbrado', 'la exportación queda registrada');
+  });
+
+  test('el CSV neutraliza fórmulas y escapa comillas', async () => {
+    assert.equal(csvCell('=HYPERLINK("http://x")'), `"'=HYPERLINK(""http://x"")"`);
+    assert.equal(csvCell('+1'), "'+1");
+    assert.equal(csvCell('a,b'), '"a,b"');
+    assert.equal(csvCell(null), '');
+    await newReport(w.citizen.c, { title: '=CMD()|calc' });
+    const csv = (await w.manager.c.get('/api/indicators/report.csv')).data;
+    assert.ok(csv.includes("'=CMD()|calc"));
+    assert.ok(!/,=CMD/.test(csv));
   });
 });
