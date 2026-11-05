@@ -17,6 +17,7 @@ import Approvals from './pages/admin/Approvals.jsx';
 import Audit from './pages/admin/Audit.jsx';
 import ChangeLog from './pages/admin/ChangeLog.jsx';
 import Incidents from './pages/admin/Incidents.jsx';
+import OpsConfig from './pages/admin/OpsConfig.jsx';
 import ReportDetail from './pages/admin/ReportDetail.jsx';
 import Reports from './pages/admin/Reports.jsx';
 import Roles from './pages/admin/Roles.jsx';
@@ -41,6 +42,7 @@ const ADMIN_PAGES = {
   '/admin/aprobaciones': [() => <Approvals />, 'aprobaciones'],
   '/admin/incidencias': [() => <Incidents />, 'incidencias'],
   '/admin/bitacora': [(q) => <ChangeLog key={q.report ?? ''} query={q} />, 'bitacora'],
+  '/admin/configuracion': [() => <OpsConfig />, 'configuracion'],
   '/admin/usuarios': [() => <Users />, 'usuarios'],
   '/admin/roles': [() => <Roles />, 'roles'],
   '/admin/auditoria': [() => <Audit />, 'auditoria'],

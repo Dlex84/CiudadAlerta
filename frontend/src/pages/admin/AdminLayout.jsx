@@ -11,6 +11,7 @@ const GROUPS = [
       { to: '/admin/aprobaciones', label: 'Aprobaciones', module: 'aprobaciones' },
       { to: '/admin/incidencias', label: 'Incidencias', module: 'incidencias' },
       { to: '/admin/bitacora', label: 'Bitácora de cambios', module: 'bitacora' },
+      { to: '/admin/configuracion', label: 'Plazos y aprobaciones', module: 'configuracion' },
     ],
   },
   {
