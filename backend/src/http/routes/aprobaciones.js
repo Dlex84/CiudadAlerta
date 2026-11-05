@@ -19,4 +19,16 @@ export function aprobacionesRoutes(r, { services, needs }) {
   r.post('/api/reports/:id/approvals/:approvalId/decision', ...needs('aprobaciones', 'update'), async (ctx) =>
     ok(await services.approvals.decide(ctx.principal, ctx.params.id, ctx.params.approvalId, await ctx.json())),
   );
+
+  r.get('/api/incidents', ...needs('incidencias', 'read'), async (ctx) => ok(await services.incidents.list(ctx.query)));
+  r.post('/api/reports/:id/incidents', ...needs('incidencias', 'create'), async (ctx) =>
+    created(await services.incidents.create(ctx.principal, ctx.params.id, await ctx.json())),
+  );
+  r.get('/api/incidents/:id', ...needs('incidencias', 'read'), async (ctx) => ok(await services.incidents.get(ctx.params.id)));
+  r.patch('/api/incidents/:id', ...needs('incidencias', 'update'), async (ctx) =>
+    ok(await services.incidents.update(ctx.principal, ctx.params.id, await ctx.json())),
+  );
+  r.post('/api/incidents/:id/comments', ...needs('incidencias', 'update'), async (ctx) =>
+    created(await services.incidents.comment(ctx.principal, ctx.params.id, await ctx.json())),
+  );
 }

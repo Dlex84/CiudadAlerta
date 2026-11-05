@@ -190,3 +190,92 @@ describe('HU-2.4 Flujos de aprobación', () => {
     assert.equal(log.data.items[0].newValues.decision, 'approved');
   });
 });
+
+describe('HU-2.6 Incidencias operativas', () => {
+  let w, report, incidentId;
+  before(async () => {
+    w = await opsWorld();
+    report = await newReport(w.citizen.c);
+    await toInProcess(w.sup.c, report.id, w.op.user.id);
+  });
+  after(() => w.app.close());
+
+  test('registra incidencias con categoría, descripción, prioridad y responsable, vinculadas a un reporte', async () => {
+    const res = await w.op.c.post(`/api/reports/${report.code}/incidents`, {
+      category: 'material', description: 'No hay bombillas LED de 100 W en almacén', priority: 'alta', assigneeId: w.op2.user.id,
+    });
+    assert.equal(res.status, 201);
+    const i = res.data.incident;
+    incidentId = i.id;
+    assert.equal(i.reportId, report.id);
+    assert.equal(i.reportCode, report.code);
+    assert.equal(i.categoryLabel, 'Falta de material');
+    assert.equal(i.priority, 'alta');
+    assert.equal(i.status, 'abierta');
+    assert.equal(i.assignee.id, w.op2.user.id);
+    assert.equal(i.createdByName, 'Prueba operador');
+    const n = (await w.op2.c.get('/api/notifications')).data.items[0];
+    assert.match(n.title, new RegExp(`Incidencia en ${report.code}`));
+  });
+
+  test('valida los datos de la incidencia', async () => {
+    const base = { category: 'material', description: 'Falta cable', priority: 'media' };
+    const cases = [
+      [{ ...base, category: 'magia' }, 'invalid_category'],
+      [{ ...base, priority: 'urgentísima' }, 'invalid_priority'],
+      [{ ...base, description: 'x' }, 'invalid_description'],
+      [{ ...base, assigneeId: w.citizen.user.id }, 'invalid_assignee'],
+    ];
+    for (const [body, code] of cases) assert.equal((await w.op.c.post(`/api/reports/${report.id}/incidents`, body)).data.error.code, code);
+    assert.equal((await w.op.c.post('/api/reports/CA-9999/incidents', base)).status, 404);
+  });
+
+  test('cambia el estado y documenta la resolución', async () => {
+    const go = (body) => w.op2.c.patch(`/api/incidents/${incidentId}`, body);
+    assert.equal((await go({ status: 'en_atencion' })).data.incident.status, 'en_atencion');
+    assert.equal((await go({ status: 'resuelta' })).data.error.code, 'invalid_resolution');
+    w.time.advanceHours(3);
+    const solved = await go({ status: 'resuelta', resolution: 'Se compraron bombillas al proveedor local' });
+    assert.equal(solved.status, 200);
+    assert.equal(solved.data.incident.resolution, 'Se compraron bombillas al proveedor local');
+    assert.equal(solved.data.incident.resolvedAt, w.time.now.toISOString());
+    assert.equal((await go({ status: 'abierta' })).data.error.code, 'invalid_transition');
+    assert.equal((await go({ status: 'cerrada' })).status, 200);
+    assert.equal((await go({ status: 'en_atencion' })).data.error.code, 'invalid_transition', 'cerrada es final');
+    assert.equal((await go({})).data.error.code, 'nothing_to_update');
+  });
+
+  test('guarda el historial de cambios y comentarios de cada incidencia', async () => {
+    assert.equal((await w.sup.c.post(`/api/incidents/${incidentId}/comments`, { comment: 'Pedir stock mínimo para el mes' })).status, 201);
+    const d = await w.sup.c.get(`/api/incidents/${incidentId}`);
+    assert.deepEqual(d.data.events.map((e) => [e.kind, e.toValue]), [
+      ['created', 'abierta'], ['status', 'en_atencion'], ['status', 'resuelta'], ['status', 'cerrada'], ['comment', null],
+    ]);
+    assert.equal(d.data.events[4].actorName, 'Prueba supervisor');
+    assert.equal(d.data.events[2].comment, 'Se compraron bombillas al proveedor local');
+    const log = await w.auditor.c.get(`/api/changelog?report=${report.code}&entity=incident`);
+    assert.ok(log.data.total >= 5);
+  });
+
+  test('cambia prioridad y responsable con historial; filtra la lista', async () => {
+    const i2 = (await w.op.c.post(`/api/reports/${report.id}/incidents`, { category: 'clima', description: 'Lluvia fuerte impide subir al poste', priority: 'baja' })).data.incident;
+    const up = await w.sup.c.patch(`/api/incidents/${i2.id}`, { priority: 'critica', assigneeId: w.op.user.id });
+    assert.equal(up.data.incident.priority, 'critica');
+    assert.deepEqual(up.data.events.slice(1).map((e) => e.toValue), ['prioridad: critica', 'responsable: Prueba operador']);
+    const cleared = await w.sup.c.patch(`/api/incidents/${i2.id}`, { assigneeId: null });
+    assert.equal(cleared.data.incident.assignee, null);
+
+    const byReport = await w.sup.c.get(`/api/incidents?report=${report.code}`);
+    assert.equal(byReport.data.total, 2);
+    assert.equal((await w.sup.c.get('/api/incidents?status=abierta')).data.items.every((i) => i.status === 'abierta'), true);
+    assert.equal((await w.sup.c.get('/api/incidents?priority=critica')).data.total, 1);
+    assert.equal((await w.sup.c.get('/api/incidents?status=xx')).data.error.code, 'invalid_status');
+  });
+
+  test('permisos: el ciudadano no ve incidencias; el gerente consulta pero no registra', async () => {
+    assert.equal((await w.citizen.c.get('/api/incidents')).status, 403);
+    assert.equal((await w.manager.c.get('/api/incidents')).status, 200);
+    assert.equal((await w.manager.c.post(`/api/reports/${report.id}/incidents`, { category: 'otro', description: 'algo pasa', priority: 'baja' })).status, 403);
+    assert.equal((await w.manager.c.get('/api/incidents/999999')).status, 404);
+  });
+});
