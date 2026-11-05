@@ -19,7 +19,7 @@ flowchart LR
 | Servicios | `src/services` | Reglas de las historias (login, roles, bloqueo…) | tocar SQL o `req/res` |
 | Repositorios | `src/repositories/pg` | SQL | decidir reglas |
 | Adaptadores | `src/adapters` | Correo, geolocalización, archivos | — |
-| Dominio | `src/domain` | Módulos/permisos, roles base, serializadores | — |
+| Dominio | `src/domain` | Módulos/permisos, roles base, serializadores, estados y transiciones de reportes (`operations.js`) | — |
 
 `createApp({ config, repos, mailer, geoip, avatars })` recibe todo lo externo por parámetro. Por eso las pruebas ejecutan la API HTTP real sobre repositorios en memoria, y el CI repite los flujos clave contra PostgreSQL.
 
@@ -36,6 +36,12 @@ flowchart LR
 - Cabeceras `nosniff`, `X-Frame-Options: DENY`, CSP básica.
 - Fotos: validación por contenido (magic bytes), tope de 2 MB, nombre generado por el servidor.
 - Anti-escalada: solo un Super Administrador gestiona Super Administradores; nadie cambia su propio rol ni los permisos de su propio rol.
+
+## Épica 2: piezas nuevas
+- **Base común** `services/operations-context.js`: búsqueda de reportes por id o código, visibilidad (el ciudadano solo ve lo suyo), filtros compartidos por la lista y el panel, serialización.
+- **Bitácora** `changelog.service.js#track()`: envuelve cada cambio; guarda valores antes/después y también los intentos rechazados.
+- **Alertas**: `server.js` ejecuta `alerts.scan()` cada `ALERT_SCAN_MINUTES` (desactivado en pruebas). Con varias instancias, activarlo solo en una.
+- **Rutas por persona del plan**: `http/routes/{reportes,asignaciones,aprobaciones,indicadores}.js`.
 
 ## Fuera de alcance de esta entrega (anotado para el futuro)
 Verificación de correo al registrarse, doble factor, bloqueo automático por intentos fallidos, limitador de intentos compartido entre instancias (Redis), almacenamiento de fotos en S3/MinIO, exportación CSV de la auditoría, retención/purga de `access_logs`.
