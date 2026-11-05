@@ -4,6 +4,7 @@ import { sessionCookie } from './cookies.js';
 import { authenticated, requireAnyPermission, requirePermission } from './middleware.js';
 import { limited } from './rate-limit.js';
 import { Router, created, noContent, ok } from './router.js';
+import { aprobacionesRoutes } from './routes/aprobaciones.js';
 import { asignacionesRoutes } from './routes/asignaciones.js';
 import { reportesRoutes } from './routes/reportes.js';
 
@@ -136,6 +137,7 @@ export function buildRoutes({ services, config, avatars, limiter }) {
   const epica2 = { services, auth, needs, needsAny };
   reportesRoutes(r, epica2);
   asignacionesRoutes(r, epica2);
+  aprobacionesRoutes(r, epica2);
 
   // ── Archivos subidos (fotos de perfil) ─────────────────────────────────────────
   r.get('/uploads/avatars/:file', async (ctx) => {

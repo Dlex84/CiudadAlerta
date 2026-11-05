@@ -1,4 +1,5 @@
 import { createAlertsService } from './alerts.service.js';
+import { createApprovalsService } from './approvals.service.js';
 import { createAssignmentsService } from './assignments.service.js';
 import { createAuditService } from './audit.service.js';
 import { createAuthService } from './auth.service.js';
@@ -30,5 +31,6 @@ export function createServices(deps) {
     reports: createReportsService(ops),
     assignments: createAssignmentsService(ops),
     alerts: createAlertsService(ops),
+    approvals: createApprovalsService(ops),
   };
 }
