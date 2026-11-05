@@ -5,6 +5,7 @@ import { createAuditService } from './audit.service.js';
 import { createAuthService } from './auth.service.js';
 import { createChangeLogService } from './changelog.service.js';
 import { createIncidentsService } from './incidents.service.js';
+import { createIndicatorsService } from './indicators.service.js';
 import { createNotificationsService } from './notifications.service.js';
 import { createOpsContext } from './operations-context.js';
 import { createProfileService } from './profile.service.js';
@@ -34,5 +35,6 @@ export function createServices(deps) {
     alerts: createAlertsService(ops),
     approvals: createApprovalsService(ops),
     incidents: createIncidentsService(ops),
+    indicators: createIndicatorsService(ops),
   };
 }
