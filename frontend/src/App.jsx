@@ -6,6 +6,7 @@ import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import MyReports from './pages/MyReports.jsx';
 import NewReport from './pages/NewReport.jsx';
+import Notifications from './pages/Notifications.jsx';
 import Profile from './pages/Profile.jsx';
 import Register from './pages/Register.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
@@ -20,7 +21,7 @@ import Roles from './pages/admin/Roles.jsx';
 import Users from './pages/admin/Users.jsx';
 
 const PUBLIC = new Set(['/', '/login', '/registro', '/recuperar', '/restablecer']);
-const CITIZEN = new Set(['/inicio', '/perfil', '/reportes', '/reportes/nuevo', '/seguimiento']);
+const CITIZEN = new Set(['/inicio', '/perfil', '/reportes', '/reportes/nuevo', '/seguimiento', '/notificaciones']);
 
 /** Primera sección del panel a la que el rol tiene acceso. */
 function adminHome(can) {
@@ -39,6 +40,7 @@ const ADMIN_PAGES = {
   '/admin/usuarios': [() => <Users />, 'usuarios'],
   '/admin/roles': [() => <Roles />, 'roles'],
   '/admin/auditoria': [() => <Audit />, 'auditoria'],
+  '/admin/notificaciones': [() => <><h1>Notificaciones</h1><Notifications embedded /></>, null],
   '/admin/perfil': [() => <><h1>Mi perfil</h1><Profile embedded /></>, null],
 };
 
@@ -70,6 +72,7 @@ export default function App() {
     case '/reportes': return <MyReports />;
     case '/reportes/nuevo': return can('reportes', 'create') ? <NewReport /> : <MyReports />;
     case '/seguimiento': return <Tracking key={query.id} id={query.id} isNew={!!query.nuevo} />;
+    case '/notificaciones': return <Notifications />;
   }
 
   const page = ADMIN_PAGES[path];

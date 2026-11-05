@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../../api.js';
 import { useAuth } from '../../auth.jsx';
 import { Link, navigate } from '../../router.jsx';
 
@@ -21,6 +22,7 @@ const GROUPS = [
   {
     title: 'Mi cuenta',
     items: [
+      { to: '/admin/notificaciones', label: 'Notificaciones', badge: true },
       { to: '/admin/perfil', label: 'Mi perfil' },
     ],
   },
@@ -28,6 +30,8 @@ const GROUPS = [
 
 export default function AdminLayout({ path, children }) {
   const { session, can, logout } = useAuth();
+  const [unread, setUnread] = useState(0);
+  useEffect(() => { api.get('/notifications?limit=1').then((r) => setUnread(r.unread)).catch(() => {}); }, [path]);
 
   return (
     <div className="admin">
@@ -41,7 +45,7 @@ export default function AdminLayout({ path, children }) {
               <div className="nav-group">{g.title}</div>
               {visible.map((i) => (
                 <Link key={i.to} to={i.to} className={path === i.to || i.also?.includes(path) ? 'active' : ''}>
-                  {i.label}
+                  {i.label}{i.badge && unread > 0 && <span className="badge">{unread}</span>}
                 </Link>
               ))}
             </React.Fragment>

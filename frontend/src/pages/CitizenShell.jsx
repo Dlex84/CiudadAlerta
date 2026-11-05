@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../api.js';
 import { Link } from '../router.jsx';
 
 const NAV = [
@@ -9,14 +10,22 @@ const NAV = [
   { to: '/perfil', icon: '○', label: 'Perfil' },
 ];
 
-/** Marco de la app ciudadana con la navegación inferior del prototipo. */
+/** Marco de la app ciudadana con la navegación inferior del prototipo y la campana de notificaciones. */
 export default function CitizenShell({ path, title, subtitle, back, children }) {
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    api.get('/notifications?limit=1').then((r) => setUnread(r.unread)).catch(() => {});
+  }, [path]);
+
   return (
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header-row">
           {back && <Link to={back} className="back" aria-label="Volver">‹</Link>}
           <h1>{title}</h1>
+          <Link to="/notificaciones" className="bell" aria-label={`Notificaciones${unread ? `: ${unread} sin leer` : ''}`}>
+            🔔{unread > 0 && <b>{unread > 9 ? '9+' : unread}</b>}
+          </Link>
         </div>
         {subtitle && <p>{subtitle}</p>}
       </header>

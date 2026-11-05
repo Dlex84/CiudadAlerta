@@ -7,7 +7,12 @@ import { Link } from '../../router.jsx';
 
 // HU-2.2 (lista y filtros) + HU-2.3 (filtro por responsable) + HU-2.5 (vencidos)
 export function useAssignees() {
-  return []; // la lista de responsables llega con HU-2.3
+  const { can } = useAuth();
+  const [list, setList] = useState([]);
+  useEffect(() => {
+    if (can('asignaciones', 'read')) api.get('/assignees').then((r) => setList(r.items)).catch(() => {});
+  }, []);
+  return list;
 }
 
 /** Filtros comunes de reportes (lista, panel y reportes operativos). */
