@@ -11,9 +11,26 @@ Cosas que encontramos al cruzar el backlog con el prototipo. Cada una tiene la *
 | 5 | **Teléfono** aparece en HU-1.2 y HU-1.7 pero no en el registro del prototipo. | Opcional en todos lados; el registro ciudadano no lo pide. | ¿Obligatorio para algún rol? |
 | 6 | **Foto de perfil**: el prototipo muestra iniciales. | Opcional; si no hay foto se muestran iniciales. | — |
 | 7 | **Pantallas de administración** no existen en el prototipo (usuarios, roles, permisos, auditoría, recuperación de contraseña). | Se construyeron con el mismo estilo visual. | Diseñarlas en Figma |
-| 8 | **Estados de un reporte.** Las listas usan Reportado / En revisión / Resuelto y el detalle añade «Validado por la comunidad»; el #CA-0028 aparece con dos estados distintos. | Fuera de esta épica. | Definir la máquina de estados antes de la Épica 2 |
-| 9 | **Quién resuelve los reportes.** El prototipo dice «sin conexión gubernamental». | El rol *Supervisor* queda como candidato (permiso `reportes`). | ¿Quién cambia estados? |
+| 8 | **Estados de un reporte.** Las listas usan Reportado / En revisión / Resuelto y el detalle añade «Validado por la comunidad»; el #CA-0028 aparece con dos estados distintos. | **Épica 2:** Reportado → Validado → En revisión → En proceso → Resuelto, más Rechazado. «Validado» lo hace el Supervisor (no la comunidad). | Ver #14–#17 |
+| 9 | **Quién resuelve los reportes.** El prototipo dice «sin conexión gubernamental». | **Épica 2:** Supervisor (valida, asigna, aprueba) y Operador/Técnico (atiende lo asignado). | ¿Son cuadrillas municipales o voluntarios? |
 | 10 | **Privacidad vs. HU-1.8.** El prototipo promete ubicación aproximada «por privacidad» y la auditoría guarda IP + ciudad. | Se guarda IP y localización por IP solo para auditoría de accesos, con base local (sin terceros). | Reflejarlo en la política de privacidad |
 | 11 | **Retención de la auditoría.** | Se guarda indefinidamente. | ¿Cuántos meses? |
 | 12 | **Sprints.** El backlog pone 47 SP en un solo Sprint 1. | Se propone Sprint 1 (29 SP) y Sprint 2 (18 SP). | Validar con el equipo |
 | 13 | **Bloqueo «temporal».** HU-1.6 dice temporal pero no define duración. | Bloqueo manual hasta que un admin reactive. | ¿Se necesita fecha de fin automática? |
+
+## Épica 2 — Gestión de operaciones
+
+El plan pide validar en equipo los tipos, estados, aprobaciones, plazos y roles. Esto es lo que quedó en el código mientras se confirma:
+
+| # | Tema | Decisión provisional | Confirmar |
+|---|---|---|---|
+| 14 | **Operación = reporte ciudadano.** | Así se implementó (plan, sección «Cómo aplicamos la épica»). | Con el profesor / PO |
+| 15 | **«Vencido» como estado.** El plan lo lista entre los estados. | Es una **condición calculada** (abierto y con fecha límite pasada), no un estado. Ver [ADR-003](decisiones/ADR-003-operaciones.md). | ¿Se acepta? |
+| 16 | **Plazos por tipo.** El backlog no los da. | Agua 24 h · Basura 48 h · Alumbrado 72 h · Vías públicas 168 h; aviso previo 4/8/12/24 h. Editables en *Plazos y aprobaciones*. | Valores reales |
+| 17 | **Pasos de aprobación.** | Un paso obligatorio por tipo: «Visto bueno del supervisor». Configurable hasta 5 pasos. | ¿Algún tipo necesita más de uno? |
+| 18 | **Ventana anti-repetición de alertas.** | 24 h (`ALERT_DEDUPE_HOURS`); revisión cada 15 min (`ALERT_SCAN_MINUTES`). | — |
+| 19 | **Incidencias abiertas al resolver.** | No bloquean el cierre del reporte; se ven en la ficha y en los indicadores. | ¿Deberían bloquearlo? |
+| 20 | **Fotografías y mapa** (pantallas 05, 06, 09). | Fuera de esta entrega; la ubicación es texto. | ¿Entran en la Épica 2 o en otra? |
+| 21 | **Story points por historia.** El plan da 46 SP por parejas (13/10/13/10). | Se documentaron por pareja. | Reparto individual y prioridades |
+| 22 | **Stack.** El plan proponía Express + SQLite. | Se mantuvo el de la Épica 1 (Node + PostgreSQL) para compartir base, sesión y permisos. | Con el equipo de la Épica 1 |
+| 23 | **Texto de las historias.** El plan no copia el «Como… quiero…» del backlog del profesor. | Redacción provisional en cada `HU-2.x.md`. | Copiar el texto oficial |

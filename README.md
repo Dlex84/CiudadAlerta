@@ -3,7 +3,7 @@
 Plataforma comunitaria para **reportar problemas de tu entorno** (un bache, un poste apagado…) y darles seguimiento hasta que se resuelvan.
 Proyecto de la materia **ISO615 — Desarrollo de Software con Tecnología Open Source**.
 
-> **Estado:** Épica 1 (Gestión de usuarios y acceso) con código inicial completo. La Épica 2 (reportes, mapa, seguimiento) es la siguiente.
+> **Estado:** Épica 1 (Gestión de usuarios y acceso) y Épica 2 (Gestión de operaciones: reportes, responsables, aprobaciones, alertas, incidencias, indicadores y bitácora) con código completo. Mapa y fotografías quedan para una próxima épica.
 
 ## Qué incluye hoy
 
@@ -17,8 +17,16 @@ Proyecto de la materia **ISO615 — Desarrollo de Software con Tecnología Open 
 | HU-1.7 | Perfil: datos, foto y cambio de contraseña |
 | HU-1.8 | Auditoría de accesos con IP, localización y filtros |
 | (extra) | Registro de ciudadanos — pantalla «Crear cuenta» del prototipo |
+| HU-2.1 | Panel de operaciones: creados, en proceso, completados, rechazados y vencidos, con filtros |
+| HU-2.2 | Registro y seguimiento de reportes (#CA-0001) con transiciones de estado validadas e historial |
+| HU-2.3 | Asignación y reasignación de responsables con motivo y notificaciones |
+| HU-2.4 | Flujos de aprobación configurables por tipo antes de «Resuelto», con devolución para corrección |
+| HU-2.5 | Plazos por tipo, alertas de vencidos y por vencer sin repetir, y registro de envíos |
+| HU-2.6 | Incidencias operativas vinculadas a un reporte, con estados, resolución e historial |
+| HU-2.7 | Reportes operativos con métricas definidas y exportación CSV |
+| HU-2.8 | Bitácora de cambios inmutable con valores antes/después |
 
-Detalle y criterios: [`docs/backlog/epica-1.md`](docs/backlog/epica-1.md).
+Detalle y criterios: [`docs/backlog/epica-1.md`](docs/backlog/epica-1.md) · [`docs/backlog/epica-2.md`](docs/backlog/epica-2.md).
 
 ## Stack (todo open source)
 
@@ -39,6 +47,7 @@ docker compose up -d db mailpit           # PostgreSQL + bandeja de correos (htt
 cd backend
 npm install
 npm run db:setup                          # migra, siembra roles y crea el Super Administrador
+npm run db:demo                           # (opcional) usuarios de cada rol y reportes de ejemplo
 npm run dev                               # API en http://localhost:3000
 
 # en otra terminal
@@ -56,7 +65,7 @@ Todo en contenedores (una sola imagen que sirve API + frontend): `docker compose
 
 ```bash
 cd backend
-npm test                                  # 55 pruebas, sin base de datos (repositorios en memoria)
+npm test                                  # 104 pruebas, sin base de datos (repositorios en memoria)
 
 # además contra PostgreSQL real (reinicia el esquema de esa base; el nombre debe contener "test"):
 createdb ... ciudadalerta_test
@@ -78,7 +87,7 @@ scripts/            crear-issues.sh (publica las historias como issues de GitHub
 - [Arquitectura](docs/arquitectura.md) · [Modelo de datos](docs/modelo-datos.md) · [API](docs/api.md)
 - [Roles y permisos](docs/roles-y-permisos.md)
 - [Preguntas abiertas para el Product Owner](docs/preguntas-abiertas.md)
-- [Backlog de la Épica 1](docs/backlog/epica-1.md) · [Prototipo navegable](docs/prototipo/prototipo-navegable.html)
+- [Backlog de la Épica 1](docs/backlog/epica-1.md) · [Backlog de la Épica 2](docs/backlog/epica-2.md) · [Prototipo navegable](docs/prototipo/prototipo-navegable.html)
 - [Cómo contribuir](CONTRIBUTING.md)
 
 ## Licencia

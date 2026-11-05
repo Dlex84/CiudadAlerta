@@ -38,6 +38,12 @@ export function loadConfig(env = process.env) {
       pass: env.SMTP_PASS ?? '',
       from: env.MAIL_FROM ?? 'CiudadAlerta <no-reply@ciudadalerta.local>',
     },
+    // HU-2.5: revisión periódica de vencimientos (0 = desactivada) y ventana para no repetir la misma alerta.
+    alerts: {
+      scanMinutes: int(env.ALERT_SCAN_MINUTES, 15),
+      dedupeHours: int(env.ALERT_DEDUPE_HOURS, 24),
+      email: bool(env.ALERT_EMAIL, true),
+    },
     seedAdmin: {
       name: env.SEED_ADMIN_NAME ?? 'Super Administrador',
       email: env.SEED_ADMIN_EMAIL ?? '',

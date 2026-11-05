@@ -1,10 +1,18 @@
-// Módulos protegidos por permisos. "reportes" queda reservado para la Épica 2.
+// Módulos protegidos por permisos (C=crear R=consultar U=modificar D=eliminar).
+// Épica 2: qué significa cada acción en sus módulos está en docs/roles-y-permisos.md.
 export const MODULES = [
   { key: 'usuarios', label: 'Usuarios' },
   { key: 'roles', label: 'Roles' },
   { key: 'permisos', label: 'Permisos' },
   { key: 'auditoria', label: 'Auditoría de accesos' },
-  { key: 'reportes', label: 'Reportes ciudadanos' },
+  { key: 'reportes', label: 'Reportes ciudadanos (propios)' },
+  { key: 'operaciones', label: 'Gestión de operaciones' },
+  { key: 'asignaciones', label: 'Asignación de responsables' },
+  { key: 'aprobaciones', label: 'Aprobaciones' },
+  { key: 'incidencias', label: 'Incidencias operativas' },
+  { key: 'configuracion', label: 'Configuración de operaciones' },
+  { key: 'indicadores', label: 'Panel y reportes operativos' },
+  { key: 'bitacora', label: 'Bitácora de cambios' },
 ];
 export const MODULE_KEYS = MODULES.map((m) => m.key);
 export const ACTIONS = ['create', 'read', 'update', 'delete'];

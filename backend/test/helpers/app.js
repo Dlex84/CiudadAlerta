@@ -1,5 +1,5 @@
 import { loadConfig } from '../../src/config.js';
-import { seedSystemRoles } from '../../src/domain/seed-data.js';
+import { seedOperationsCatalog, seedSystemRoles } from '../../src/domain/seed-data.js';
 import { createApp } from '../../src/app.js';
 import { hashPassword } from '../../src/lib/passwords.js';
 import { createMemoryRepos } from './memory-repos.js';
@@ -8,17 +8,18 @@ export const PASSWORD = 'Clave-segura-123';
 const silent = { info() {}, error() {}, warn() {} };
 
 /** Levanta la API real (HTTP) sobre repositorios en memoria. */
-export async function startTestApp({ env = {}, clock, repos = createMemoryRepos() } = {}) {
+export async function startTestApp({ env = {}, clock, repos = createMemoryRepos(), mailer: customMailer } = {}) {
   await seedSystemRoles(repos);
+  await seedOperationsCatalog(repos);
   const sent = [];
-  const mailer = { async send(m) { sent.push(m); } };
+  const mailer = { async send(m) { if (customMailer) await customMailer.send(m); sent.push(m); } };
   const avatars = {
     files: new Map(),
     async save(userId, buf, ext) { const name = `${userId}.${ext}`; this.files.set(name, buf); return `/uploads/avatars/${name}`; },
     async read(name) { return this.files.get(name) ?? null; },
   };
   const geoip = { lookup: (ip) => (ip === '203.0.113.9' ? { country: 'DO', city: 'Santo Domingo' } : { country: null, city: 'Red local' }) };
-  const config = loadConfig({ NODE_ENV: 'test', RATE_LIMIT_MAX: '1000', APP_URL: 'http://localhost:5173', ...env });
+  const config = loadConfig({ NODE_ENV: 'test', RATE_LIMIT_MAX: '1000', APP_URL: 'http://localhost:5173', ALERT_SCAN_MINUTES: '0', ...env });
   const { server, services } = createApp({ config, repos, mailer, geoip, avatars, clock, logger: silent });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${server.address().port}`;

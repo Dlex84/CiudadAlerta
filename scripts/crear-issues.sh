@@ -10,7 +10,7 @@ REPO_ARG=()
 command -v gh >/dev/null || { echo "Instala GitHub CLI: https://cli.github.com"; exit 1; }
 
 echo "→ Creando etiquetas…"
-for l in "epica-1:0E8A16" "historia-de-usuario:1D76DB" "prioridad-critica:B60205" "prioridad-alta:D93F0B" "prioridad-media:FBCA04" "bug:EE0701"; do
+for l in "epica-1:0E8A16" "epica-2:5319E7" "historia-de-usuario:1D76DB" "prioridad-critica:B60205" "prioridad-alta:D93F0B" "prioridad-media:FBCA04" "bug:EE0701"; do
   gh label create "${l%%:*}" --color "${l##*:}" --force "${REPO_ARG[@]}" >/dev/null
 done
 
@@ -21,7 +21,10 @@ for f in docs/backlog/issues/HU-*.md; do
   if gh issue list --search "\"$title\" in:title" --state all "${REPO_ARG[@]}" --json title -q '.[].title' | grep -qxF "$title"; then
     echo "  ya existe: $title"; continue
   fi
+  epic="epica-$(basename "$f" | sed -E 's/^HU-([0-9]+)\..*/\1/')"
+  labels="$epic,historia-de-usuario"
+  case "$prio" in critica|alta|media) labels="$labels,prioridad-$prio" ;; esac
   gh issue create --title "$title" --body-file <(tail -n +2 "$f") \
-    --label "epica-1,historia-de-usuario,prioridad-$prio" "${REPO_ARG[@]}"
+    --label "$labels" "${REPO_ARG[@]}"
 done
 echo "Listo. Sugerencia: crea un tablero en GitHub Projects y agrega estos issues."

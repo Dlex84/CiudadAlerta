@@ -1,9 +1,13 @@
 import { ACTIONS, DASHBOARD_PATHS, MODULES } from '../domain/permissions.js';
 import { AppError, notFound } from './errors.js';
 import { sessionCookie } from './cookies.js';
-import { authenticated, requirePermission } from './middleware.js';
+import { authenticated, requireAnyPermission, requirePermission } from './middleware.js';
 import { limited } from './rate-limit.js';
 import { Router, created, noContent, ok } from './router.js';
+import { aprobacionesRoutes } from './routes/aprobaciones.js';
+import { asignacionesRoutes } from './routes/asignaciones.js';
+import { indicadoresRoutes } from './routes/indicadores.js';
+import { reportesRoutes } from './routes/reportes.js';
 
 const CONTENT_TYPES = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 
@@ -11,6 +15,7 @@ export function buildRoutes({ services, config, avatars, limiter }) {
   const r = new Router();
   const auth = authenticated(services, config);
   const needs = (module, action) => [auth, requirePermission(module, action)];
+  const needsAny = (...pairs) => [auth, requireAnyPermission(pairs)];
   const authLimit = limited(limiter, 'auth');
   const ua = (ctx) => ctx.req.headers['user-agent'];
 
@@ -128,6 +133,13 @@ export function buildRoutes({ services, config, avatars, limiter }) {
 
   // ── Auditoría de accesos (HU-1.8) ──────────────────────────────────────────────
   r.get('/api/audit/access', ...needs('auditoria', 'read'), async (ctx) => ok(await services.audit.search(ctx.query)));
+
+  // ── Épica 2: Gestión de operaciones (un archivo por persona del plan) ───────────
+  const epica2 = { services, auth, needs, needsAny };
+  reportesRoutes(r, epica2);
+  asignacionesRoutes(r, epica2);
+  aprobacionesRoutes(r, epica2);
+  indicadoresRoutes(r, epica2);
 
   // ── Archivos subidos (fotos de perfil) ─────────────────────────────────────────
   r.get('/uploads/avatars/:file', async (ctx) => {

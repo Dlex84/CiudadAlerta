@@ -26,7 +26,7 @@ describe('PostgreSQL (integración)', { skip: !url ? 'define TEST_DATABASE_URL p
 
   test('roles del sistema sembrados con su matriz de permisos', async () => {
     const res = await admin.get('/api/roles');
-    assert.deepEqual(res.data.items.map((r) => r.code), ['super_admin', 'admin', 'supervisor', 'ciudadano']);
+    assert.deepEqual(res.data.items.map((r) => r.code), ['super_admin', 'admin', 'supervisor', 'operador', 'gerente', 'auditor', 'ciudadano']);
     const sup = res.data.items.find((r) => r.code === 'supervisor');
     const perms = await admin.get(`/api/roles/${sup.id}/permissions`);
     assert.equal(perms.data.permissions.find((p) => p.module === 'auditoria').read, true);
@@ -70,6 +70,58 @@ describe('PostgreSQL (integración)', { skip: !url ? 'define TEST_DATABASE_URL p
     assert.equal((await c.get('/api/me')).status, 401);
     assert.equal((await app.client().login('olvido@test.do', 'Nueva-clave-9')).status, 200);
     assert.equal((await app.client().login('olvido@test.do', PASSWORD)).status, 401);
+  });
+
+  test('Épica 2: ciclo completo de un reporte (código, estados, asignación, aprobación, incidencias)', async () => {
+    const { loggedIn } = await import('./helpers/app.js');
+    const vecino = (await loggedIn(app, 'ciudadano', 'vecino-pg@test.do')).c;
+    const sup = (await loggedIn(app, 'supervisor', 'sup-pg@test.do')).c;
+    const op = await loggedIn(app, 'operador', 'op-pg@test.do');
+    const body = { typeCode: 'alumbrado', title: 'Poste apagado', description: 'Sin luz desde el lunes en la esquina.', location: 'Calle 10' };
+    const r1 = (await vecino.post('/api/reports', body)).data;
+    const r2 = (await vecino.post('/api/reports', { ...body, typeCode: 'agua' })).data;
+    assert.equal(r1.code, 'CA-0001', 'código desde la secuencia de PostgreSQL');
+    assert.equal(r2.code, 'CA-0002');
+    assert.equal((await vecino.get('/api/reports/ca-0001')).data.report.id, r1.id, 'búsqueda por código sin distinguir mayúsculas');
+
+    for (const to of ['validado', 'en_revision']) assert.equal((await sup.post(`/api/reports/${r1.id}/transitions`, { to })).status, 200);
+    assert.equal((await sup.put(`/api/reports/${r1.id}/assignee`, { assigneeId: op.user.id })).status, 200);
+    assert.equal((await sup.post(`/api/reports/${r1.id}/transitions`, { to: 'en_proceso' })).status, 200);
+    assert.equal((await sup.get(`/api/reports?assigneeId=${op.user.id}&status=en_proceso&q=poste`)).data.total, 1);
+
+    const inc = await op.c.post(`/api/reports/${r1.id}/incidents`, { category: 'material', description: 'Falta bombilla', priority: 'alta' });
+    assert.equal(inc.status, 201);
+    assert.equal((await op.c.patch(`/api/incidents/${inc.data.incident.id}`, { status: 'resuelta', resolution: 'Comprada en ferretería' })).status, 200);
+    assert.equal((await sup.get(`/api/incidents/${inc.data.incident.id}`)).data.events.length, 2);
+
+    assert.equal((await op.c.post(`/api/reports/${r1.id}/transitions`, { to: 'resuelto' })).data.error.code, 'approval_required');
+    const req = await op.c.post(`/api/reports/${r1.id}/approvals`);
+    assert.equal(req.status, 201);
+    const step = req.data.rounds[0].steps[0];
+    assert.equal((await sup.post(`/api/reports/${r1.id}/approvals/${step.id}/decision`, { decision: 'approved' })).status, 200);
+    assert.equal((await op.c.post(`/api/reports/${r1.id}/transitions`, { to: 'resuelto' })).data.report.status, 'resuelto');
+
+    const dash = (await sup.get('/api/dashboard')).data.indicators;
+    assert.equal(dash.creados, 2);
+    assert.equal(dash.completados, 1);
+    assert.equal(dash.pendientes, (await sup.get('/api/reports?bucket=pendientes')).data.total);
+    const metrics = (await sup.get('/api/indicators/report')).data.metrics;
+    assert.equal(metrics.find((m) => m.key === 'resolutionRate').value, 50);
+    assert.equal((await sup.get('/api/indicators/report.csv')).status, 200);
+
+    assert.equal((await vecino.get('/api/notifications')).data.unread >= 1, true);
+    const scan = await app.services.alerts.scan();
+    assert.equal(scan.checked, 1, 'solo revisa los abiertos');
+  });
+
+  test('Épica 2: la bitácora es de solo inserción también en la base de datos', async () => {
+    const log = await admin.get('/api/changelog?report=CA-0001');
+    assert.ok(log.data.total >= 8);
+    assert.ok(log.data.items.some((i) => i.action === 'status_change' && i.oldValues.status === 'en_proceso'));
+    await assert.rejects(pool.query("UPDATE change_log SET action = 'x'"), /solo inserción/);
+    await assert.rejects(pool.query('DELETE FROM change_log'), /solo inserción/);
+    await assert.rejects(pool.query('TRUNCATE change_log'), /solo inserción/);
+    assert.equal((await admin.get('/api/changelog?report=CA-0001')).data.total, log.data.total);
   });
 
   test('perfil y auditoría con filtros', async () => {

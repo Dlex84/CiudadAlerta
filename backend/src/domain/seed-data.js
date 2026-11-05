@@ -1,6 +1,7 @@
 import { flagsToRow, fromShorthand, MODULE_KEYS, SUPER_ADMIN_CODE } from './permissions.js';
 import { hashPassword } from '../lib/passwords.js';
 import { requireEmail, requirePassword, requireText } from '../lib/validate.js';
+import { DEFAULT_APPROVAL_STEPS, REPORT_TYPES } from './operations.js';
 
 /**
  * Roles base de CiudadAlerta.
@@ -21,14 +22,49 @@ export const SYSTEM_ROLES = [
     name: 'Administrador',
     description: 'Gestiona usuarios y consulta roles y auditoría.',
     dashboardPath: '/admin',
-    permissions: { usuarios: 'CRUD', roles: 'R', auditoria: 'R', reportes: 'CRUD' },
+    permissions: {
+      usuarios: 'CRUD', roles: 'R', auditoria: 'R', reportes: 'CRUD',
+      operaciones: 'RU', asignaciones: 'RU', aprobaciones: 'R', incidencias: 'CRUD',
+      configuracion: 'RU', indicadores: 'CR', bitacora: 'R',
+    },
   },
   {
     code: 'supervisor',
     name: 'Supervisor',
-    description: 'Da seguimiento a los reportes de la comunidad y consulta usuarios y auditoría.',
+    description: 'Asigna responsables y aprueba o devuelve reportes.',
     dashboardPath: '/admin',
-    permissions: { usuarios: 'R', auditoria: 'R', reportes: 'RU' },
+    permissions: {
+      usuarios: 'R', auditoria: 'R', reportes: 'RU',
+      operaciones: 'RU', asignaciones: 'RU', aprobaciones: 'RU', incidencias: 'CRU',
+      configuracion: 'R', indicadores: 'CR', bitacora: 'R',
+    },
+  },
+  {
+    code: 'operador',
+    name: 'Operador / Técnico',
+    description: 'Atiende los reportes asignados y registra incidencias.',
+    dashboardPath: '/admin',
+    permissions: { operaciones: 'RU', asignaciones: 'R', aprobaciones: 'R', incidencias: 'CRU', indicadores: 'R' },
+  },
+  {
+    code: 'gerente',
+    name: 'Gerente',
+    description: 'Consulta el panel y genera reportes operativos.',
+    dashboardPath: '/admin',
+    permissions: {
+      operaciones: 'R', asignaciones: 'R', aprobaciones: 'R', incidencias: 'R',
+      configuracion: 'R', indicadores: 'CR', bitacora: 'R',
+    },
+  },
+  {
+    code: 'auditor',
+    name: 'Auditor',
+    description: 'Consulta la bitácora de cambios y la auditoría de accesos.',
+    dashboardPath: '/admin',
+    permissions: {
+      auditoria: 'R', operaciones: 'R', asignaciones: 'R', aprobaciones: 'R', incidencias: 'R',
+      configuracion: 'R', indicadores: 'R', bitacora: 'R',
+    },
   },
   {
     code: 'ciudadano',
@@ -42,10 +78,20 @@ export const SYSTEM_ROLES = [
 export const rowsFromShorthand = (perms = {}) =>
   MODULE_KEYS.map((m) => flagsToRow(m, fromShorthand(perms[m] ?? '')));
 
-/** Idempotente: crea los roles que falten y no toca los que ya existen. */
+/**
+ * Idempotente: crea los roles que falten. En los roles del sistema que ya existen solo completa los
+ * módulos que aún no tienen fila (p. ej. los de la Épica 2); nunca pisa lo que editó un administrador.
+ */
 export async function seedSystemRoles(repos) {
   for (const def of SYSTEM_ROLES) {
-    if (await repos.roles.findByCode(def.code)) continue;
+    const existing = await repos.roles.findByCode(def.code);
+    if (existing) {
+      const rows = await repos.roles.getPermissions(existing.id);
+      const have = new Set(rows.map((r) => r.module));
+      const missing = rowsFromShorthand(def.permissions).filter((r) => !have.has(r.module));
+      if (missing.length) await repos.roles.setPermissions(existing.id, [...rows, ...missing]);
+      continue;
+    }
     const role = await repos.roles.create({
       code: def.code,
       name: def.name,
@@ -70,4 +116,16 @@ export async function seedSuperAdmin(repos, { name, email, password }) {
     roleId: role.id,
     status: 'active',
   });
+}
+
+/** Épica 2: tipos de reporte con su plazo y su paso de aprobación por defecto. Idempotente. */
+export async function seedOperationsCatalog(repos) {
+  for (const t of REPORT_TYPES) {
+    if (await repos.reportTypes.findByCode(t.code)) continue;
+    await repos.reportTypes.create({ ...t, isActive: true });
+    await repos.approvalSteps.replaceForType(
+      t.code,
+      DEFAULT_APPROVAL_STEPS.map((s, i) => ({ ...s, stepOrder: i + 1 })),
+    );
+  }
 }
