@@ -1,0 +1,40 @@
+# Desarrollo:  docker compose up -d db mailpit   (y backend/frontend con npm)
+# Todo en contenedores:  docker compose --profile app up --build   → http://localhost:3000
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ciudadalerta
+      POSTGRES_PASSWORD: ciudadalerta
+      POSTGRES_DB: ciudadalerta
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ciudadalerta"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:            # bandeja de correos de desarrollo: http://localhost:8025
+    image: axllent/mailpit
+    ports: ["1025:1025", "8025:8025"]
+
+  app:
+    profiles: ["app"]
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["3000:3000"]
+    environment:
+      DATABASE_URL: postgres://ciudadalerta:ciudadalerta@db:5432/ciudadalerta
+      APP_URL: http://localhost:3000
+      COOKIE_SECURE: "false"       # true cuando haya HTTPS
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@ciudadalerta.local}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-CambiaEstaClave-123}
+    volumes: [uploads:/data/uploads]
+
+volumes:
+  pgdata:
+  uploads:

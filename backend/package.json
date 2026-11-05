@@ -1,0 +1,21 @@
+{
+  "name": "ciudadalerta-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "API de CiudadAlerta — Épica 1: Gestión de usuarios y acceso",
+  "engines": { "node": ">=22.9" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --env-file-if-exists=../.env --watch src/server.js",
+    "db:migrate": "node --env-file-if-exists=../.env src/db/cli.js migrate",
+    "db:seed": "node --env-file-if-exists=../.env src/db/cli.js seed",
+    "db:setup": "node --env-file-if-exists=../.env src/db/cli.js setup",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "geoip-lite": "^1.4.10",
+    "nodemailer": "^6.9.16",
+    "pg": "^8.13.1"
+  }
+}
