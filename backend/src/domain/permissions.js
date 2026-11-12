@@ -13,6 +13,9 @@ export const MODULES = [
   { key: 'configuracion', label: 'Configuración de operaciones' },
   { key: 'indicadores', label: 'Panel y reportes operativos' },
   { key: 'bitacora', label: 'Bitácora de cambios' },
+  // Épica 3
+  { key: 'recursos', label: 'Recursos e inventario' },
+  { key: 'movimientos', label: 'Movimientos de inventario' },
 ];
 export const MODULE_KEYS = MODULES.map((m) => m.key);
 export const ACTIONS = ['create', 'read', 'update', 'delete'];

@@ -22,7 +22,7 @@ export const SYSTEM_ROLES = [
     name: 'Administrador',
     description: 'Gestiona usuarios y consulta roles y auditoría.',
     dashboardPath: '/admin',
-    permissions: {
+    permissions: { recursos: 'CRUD', movimientos: 'CR',
       usuarios: 'CRUD', roles: 'R', auditoria: 'R', reportes: 'CRUD',
       operaciones: 'RU', asignaciones: 'RU', aprobaciones: 'R', incidencias: 'CRUD',
       configuracion: 'RU', indicadores: 'CR', bitacora: 'R',
@@ -33,7 +33,7 @@ export const SYSTEM_ROLES = [
     name: 'Supervisor',
     description: 'Asigna responsables y aprueba o devuelve reportes.',
     dashboardPath: '/admin',
-    permissions: {
+    permissions: { recursos: 'CRU', movimientos: 'CR',
       usuarios: 'R', auditoria: 'R', reportes: 'RU',
       operaciones: 'RU', asignaciones: 'RU', aprobaciones: 'RU', incidencias: 'CRU',
       configuracion: 'R', indicadores: 'CR', bitacora: 'R',
@@ -44,14 +44,14 @@ export const SYSTEM_ROLES = [
     name: 'Operador / Técnico',
     description: 'Atiende los reportes asignados y registra incidencias.',
     dashboardPath: '/admin',
-    permissions: { operaciones: 'RU', asignaciones: 'R', aprobaciones: 'R', incidencias: 'CRU', indicadores: 'R' },
+    permissions: { recursos: 'R', movimientos: 'CR', operaciones: 'RU', asignaciones: 'R', aprobaciones: 'R', incidencias: 'CRU', indicadores: 'R' },
   },
   {
     code: 'gerente',
     name: 'Gerente',
     description: 'Consulta el panel y genera reportes operativos.',
     dashboardPath: '/admin',
-    permissions: {
+    permissions: { recursos: 'R', movimientos: 'R',
       operaciones: 'R', asignaciones: 'R', aprobaciones: 'R', incidencias: 'R',
       configuracion: 'R', indicadores: 'CR', bitacora: 'R',
     },
@@ -61,7 +61,7 @@ export const SYSTEM_ROLES = [
     name: 'Auditor',
     description: 'Consulta la bitácora de cambios y la auditoría de accesos.',
     dashboardPath: '/admin',
-    permissions: {
+    permissions: { recursos: 'R', movimientos: 'R',
       auditoria: 'R', operaciones: 'R', asignaciones: 'R', aprobaciones: 'R', incidencias: 'R',
       configuracion: 'R', indicadores: 'R', bitacora: 'R',
     },

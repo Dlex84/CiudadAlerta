@@ -2,6 +2,7 @@ import { createAccessLogsRepo } from './access-logs.js';
 import { createApprovalStepsRepo, createApprovalsRepo } from './approvals.js';
 import { createChangeLogRepo } from './change-log.js';
 import { createIncidentEventsRepo, createIncidentsRepo } from './incidents.js';
+import { createMovementsRepo, createResourcesRepo } from './inventory.js';
 import { createAlertDeliveriesRepo, createNotificationsRepo } from './notifications.js';
 import {
   createAssignmentsRepo,
@@ -32,4 +33,7 @@ export const createPgRepos = (pool) => ({
   notifications: createNotificationsRepo(pool),
   alertDeliveries: createAlertDeliveriesRepo(pool),
   changeLog: createChangeLogRepo(pool),
+  // Épica 3
+  resources: createResourcesRepo(pool),
+  movements: createMovementsRepo(pool),
 });
