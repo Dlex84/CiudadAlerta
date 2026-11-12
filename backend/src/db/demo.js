@@ -64,6 +64,21 @@ try {
     await go(e.id, 'resuelto', undefined, op);
     const f = await mk(luis, 'basura', 'Basura en el solar', 'Calle 3', 'Reporte repetido del mismo solar.');
     await go(f.id, 'rechazado', 'Duplicado de otro reporte ya atendido.');
+    // Épica 3: inventario con materiales y equipos, y movimientos ligados a los reportes.
+    const I = services.inventory;
+    const bulbs = await I.create(sup, { name: 'Bombilla LED 100 W', kind: 'material', unit: 'unidades', minStock: 5, location: 'Almacén central' });
+    const pipe = await I.create(sup, { name: 'Tubo PVC 1/2 pulgada', kind: 'material', unit: 'metros', minStock: 20, location: 'Almacén central' });
+    const asphalt = await I.create(sup, { name: 'Asfalto en frío', kind: 'material', unit: 'sacos', minStock: 10, location: 'Patio de obras' });
+    const ladder = await I.create(sup, { name: 'Escalera telescópica', kind: 'equipo', unit: 'unidades', minStock: 1, location: 'Almacén central' });
+    await I.create(sup, { name: 'Bolsas de basura industriales', kind: 'material', unit: 'paquetes', minStock: 3, location: 'Almacén central' });
+    await I.move(sup, bulbs.id, { type: 'entrada', quantity: 12, reason: 'Compra OC-118' });
+    await I.move(sup, pipe.id, { type: 'entrada', quantity: 60, reason: 'Compra OC-120' });
+    await I.move(sup, asphalt.id, { type: 'entrada', quantity: 15, reason: 'Donación de la junta de vecinos' });
+    await I.move(sup, ladder.id, { type: 'entrada', quantity: 2, reason: 'Compra OC-101' });
+    await I.move(op, bulbs.id, { type: 'salida', quantity: 8, report: d.code, reason: 'Cambio de luminarias' });
+    await I.move(op2, pipe.id, { type: 'salida', quantity: 6, report: c.code, reason: 'Reparación de la fuga' });
+    await I.move(op, asphalt.id, { type: 'salida', quantity: 9, report: e.code, reason: 'Bacheo' });
+    await I.move(sup, ladder.id, { type: 'asignacion', quantity: 1, assigneeId: op.user.id, report: d.code });
     console.log(`✔ Datos de ejemplo creados. Contraseña de todos: ${PASSWORD}`);
     for (const [code, name, email] of PEOPLE) console.log(`  ${code.padEnd(10)} ${email.padEnd(24)} ${name}`);
   }
