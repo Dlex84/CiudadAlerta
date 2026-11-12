@@ -73,7 +73,7 @@ describe('HU-1.4 Permisos por módulo', () => {
     assert.equal(res.status, 200);
     const aud = res.data.permissions.find((p) => p.module === 'auditoria');
     assert.deepEqual([aud.create, aud.read, aud.update, aud.delete], [false, true, false, false]);
-    assert.equal(res.data.permissions.length, 12); // 5 de la Épica 1 + 7 de la Épica 2
+    assert.equal(res.data.permissions.length, 14); // 5 de la Épica 1 + 7 de la Épica 2 + 2 de la Épica 3
   });
 
   test('los cambios aplican de inmediato, incluso a sesiones ya abiertas', async () => {
