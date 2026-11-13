@@ -134,4 +134,31 @@ describe('PostgreSQL (integración)', { skip: !url ? 'define TEST_DATABASE_URL p
     assert.ok(a.data.items[0].createdAt);
     assert.equal((await admin.get('/api/audit/access?email=olvido&event=login_success')).data.total >= 1, true);
   });
+  test('Épica 3: existencia atómica, saldo por movimiento, equipos prestados e historial inmutable', async () => {
+    const { loggedIn } = await import('./helpers/app.js');
+    const sup = (await loggedIn(app, 'supervisor', 'sup-inv@test.do')).c;
+    const op = await loggedIn(app, 'operador', 'op-inv@test.do');
+    const mat = (await sup.post('/api/resources', { name: 'Cemento gris', kind: 'material', unit: 'sacos', minStock: 2 })).data;
+    assert.match(mat.code, /^REC-\d{4}$/, 'código desde la secuencia');
+    const moves = (r) => `/api/resources/${r.id}/movements`;
+    await sup.post(moves(mat), { type: 'entrada', quantity: 5, reason: 'Compra' });
+    // Diez salidas de 1 al mismo tiempo sobre 5 sacos: solo 5 pueden pasar y la existencia nunca queda negativa.
+    const tries = await Promise.all(Array.from({ length: 10 }, () =>
+      op.c.post(moves(mat), { type: 'salida', quantity: 1, report: 'CA-0001' })));
+    assert.equal(tries.filter((r) => r.status === 201).length, 5);
+    assert.equal(tries.filter((r) => r.data?.error?.code === 'insufficient_stock').length, 5);
+    assert.equal((await sup.get(`/api/resources/${mat.id}`)).data.resource.stock, 0);
+
+    const eq = (await sup.post('/api/resources', { name: 'Taladro', kind: 'equipo', unit: 'unidades' })).data;
+    await sup.post(moves(eq), { type: 'entrada', quantity: 2, reason: 'Compra' });
+    await sup.post(moves(eq), { type: 'asignacion', quantity: 2, assigneeId: op.user.id });
+    await sup.post(moves(eq), { type: 'devolucion', quantity: 1, assigneeId: op.user.id });
+    assert.deepEqual((await sup.get(`/api/resources/${eq.id}`)).data.outstanding.map((x) => x.quantity), [1]);
+
+    const s = (await sup.get('/api/inventory/summary')).data.rows.find((r) => r.id === mat.id);
+    assert.deepEqual([s.entradas, s.salidas, s.stockStatus], [5, 5, 'agotado']);
+    await assert.rejects(pool.query('UPDATE inventory_movements SET quantity = 99'), /solo inserción/);
+    await assert.rejects(pool.query('DELETE FROM inventory_movements'), /solo inserción/);
+  });
+
 });

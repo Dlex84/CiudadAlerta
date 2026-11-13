@@ -5,7 +5,7 @@ import { parsePeriod } from '../lib/dates.js';
 import { isUuid } from '../lib/tokens.js';
 import { intInRange } from '../lib/validate.js';
 
-export const ENTITIES = ['report', 'approval', 'approval_steps', 'incident', 'report_type', 'export'];
+export const ENTITIES = ['report', 'approval', 'approval_steps', 'incident', 'report_type', 'export', 'resource'];
 export const RESULTS = ['success', 'rejected'];
 const SECRET_KEY = /pass|token|hash|secret|cookie/i;
 

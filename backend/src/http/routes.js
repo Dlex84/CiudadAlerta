@@ -7,6 +7,7 @@ import { Router, created, noContent, ok } from './router.js';
 import { aprobacionesRoutes } from './routes/aprobaciones.js';
 import { asignacionesRoutes } from './routes/asignaciones.js';
 import { indicadoresRoutes } from './routes/indicadores.js';
+import { inventarioRoutes } from './routes/inventario.js';
 import { reportesRoutes } from './routes/reportes.js';
 
 const CONTENT_TYPES = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
@@ -140,6 +141,9 @@ export function buildRoutes({ services, config, avatars, limiter }) {
   asignacionesRoutes(r, epica2);
   aprobacionesRoutes(r, epica2);
   indicadoresRoutes(r, epica2);
+
+  // ── Épica 3: Recursos e inventario ──────────────────────────────────────────────
+  inventarioRoutes(r, epica2);
 
   // ── Archivos subidos (fotos de perfil) ─────────────────────────────────────────
   r.get('/uploads/avatars/:file', async (ctx) => {

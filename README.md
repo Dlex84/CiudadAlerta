@@ -3,7 +3,7 @@
 Plataforma comunitaria para **reportar problemas de tu entorno** (un bache, un poste apagado…) y darles seguimiento hasta que se resuelvan.
 Proyecto de la materia **ISO615 — Desarrollo de Software con Tecnología Open Source**.
 
-> **Estado:** Épica 1 (Gestión de usuarios y acceso) y Épica 2 (Gestión de operaciones: reportes, responsables, aprobaciones, alertas, incidencias, indicadores y bitácora) con código completo. Mapa y fotografías quedan para una próxima épica.
+> **Estado:** Épica 1 (usuarios y acceso), Épica 2 (gestión de operaciones) y Épica 3 (recursos e inventario) con código completo. Mapa y fotografías quedan para una próxima épica.
 
 ## Qué incluye hoy
 
@@ -25,8 +25,14 @@ Proyecto de la materia **ISO615 — Desarrollo de Software con Tecnología Open 
 | HU-2.6 | Incidencias operativas vinculadas a un reporte, con estados, resolución e historial |
 | HU-2.7 | Reportes operativos con métricas definidas y exportación CSV |
 | HU-2.8 | Bitácora de cambios inmutable con valores antes/después |
+| HU-3.1 | Catálogo de recursos (materiales y equipos) con código REC-0001, mínimo y ubicación |
+| HU-3.2 | Entradas de inventario (compras, donaciones) con origen y saldo resultante |
+| HU-3.3 | Salidas de material ligadas a un reporte; asignación y devolución de equipos |
+| HU-3.4 | Validación de disponibilidad: la existencia nunca queda negativa; aviso de bajo mínimo |
+| HU-3.5 | Historial de movimientos de solo inserción, con filtros |
+| HU-3.6 | Reporte de existencias y movimientos con exportación CSV |
 
-Detalle y criterios: [`docs/backlog/epica-1.md`](docs/backlog/epica-1.md) · [`docs/backlog/epica-2.md`](docs/backlog/epica-2.md).
+Detalle y criterios: [`docs/backlog/epica-1.md`](docs/backlog/epica-1.md) · [`docs/backlog/epica-2.md`](docs/backlog/epica-2.md) · [`docs/backlog/epica-3.md`](docs/backlog/epica-3.md).
 
 ## Stack (todo open source)
 
@@ -65,7 +71,7 @@ Todo en contenedores (una sola imagen que sirve API + frontend): `docker compose
 
 ```bash
 cd backend
-npm test                                  # 104 pruebas, sin base de datos (repositorios en memoria)
+npm test                                  # 113 pruebas, sin base de datos (repositorios en memoria)
 
 # además contra PostgreSQL real (reinicia el esquema de esa base; el nombre debe contener "test"):
 createdb ... ciudadalerta_test

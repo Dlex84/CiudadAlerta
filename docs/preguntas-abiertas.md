@@ -34,3 +34,12 @@ El plan pide validar en equipo los tipos, estados, aprobaciones, plazos y roles.
 | 21 | **Story points por historia.** El plan da 46 SP por parejas (13/10/13/10). | Se documentaron por pareja. | Reparto individual y prioridades |
 | 22 | **Stack.** El plan proponía Express + SQLite. | Se mantuvo el de la Épica 1 (Node + PostgreSQL) para compartir base, sesión y permisos. | Con el equipo de la Épica 1 |
 | 23 | **Texto de las historias.** El plan no copia el «Como… quiero…» del backlog del profesor. | Redacción provisional en cada `HU-2.x.md`. | Copiar el texto oficial |
+
+## Épica 3 — Recursos e inventario
+
+| # | Tema | Decisión provisional | Confirmar |
+|---|---|---|---|
+| 24 | **Enunciado de la épica.** La descripción recibida repite la de la Épica 1; solo la lista de la demostración habla de inventario. | Historias HU-3.1 a HU-3.6 derivadas de esa lista ([epica-3.md](backlog/epica-3.md)). | Backlog oficial del profesor |
+| 25 | **Qué es un «recurso».** | Materiales (se consumen) y equipos (se prestan y se devuelven) del almacén municipal. | ¿Incluye personal o vehículos? |
+| 26 | **Ajustes de inventario** (mermas, conteos físicos). | No hay movimiento de ajuste; se corrige con entradas o salidas con motivo. | ¿Hace falta un tipo «ajuste» con aprobación? |
+| 27 | **Salida sin reporte.** | Toda salida de material exige el reporte que se atiende. | ¿Hay consumos internos sin reporte? |

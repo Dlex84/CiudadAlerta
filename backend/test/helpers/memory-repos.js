@@ -105,7 +105,7 @@ export function createMemoryRepos() {
     async invalidateAllForUser(userId) { for (const t of db.tokens.values()) if (t.userId === userId && !t.usedAt) t.usedAt = new Date(); },
   };
 
-  return { users, roles, sessions, accessLogs, resetTokens, ...createOperationsMemoryRepos(), _db: db };
+  return { users, roles, sessions, accessLogs, resetTokens, ...createOperationsMemoryRepos(), ...createInventoryMemoryRepos(), _db: db };
 }
 
 // ── Épica 2 ──────────────────────────────────────────────────────────────────────
@@ -326,4 +326,81 @@ export function createOperationsMemoryRepos() {
     reportTypes, reports, reportHistory, assignments, approvalSteps, approvals,
     incidents, incidentEvents, notifications, alertDeliveries, changeLog,
   };
+}
+
+// ── Épica 3 ──────────────────────────────────────────────────────────────────────
+/** Gemelo en memoria de src/repositories/pg/inventory.js (mismo contrato). */
+export function createInventoryMemoryRepos() {
+  const res = new Map();
+  const moves = [];
+  let codeSeq = 0;
+  let moveSeq = 0;
+  const has = (s, q) => s.toLowerCase().includes(q.toLowerCase());
+
+  const resources = {
+    async create(d) {
+      const r = { id: randomUUID(), code: `REC-${String(++codeSeq).padStart(4, '0')}`, stock: 0, isActive: true, location: null, ...clean(d), updatedAt: d.createdAt };
+      res.set(r.id, r);
+      return copy(r);
+    },
+    async findById(id) {
+      return copy(res.get(id) ?? [...res.values()].find((r) => r.code === String(id).toUpperCase()) ?? null);
+    },
+    async findByName(name) { return copy([...res.values()].find((r) => r.name.toLowerCase() === name.toLowerCase()) ?? null); },
+    async list(f = {}) {
+      const items = [...res.values()].filter((r) =>
+        (!f.q || has(r.name, f.q) || has(r.code, f.q)) && (!f.kind || r.kind === f.kind) &&
+        (f.active === undefined || r.isActive === f.active) && (!f.low || r.stock <= r.minStock)).sort((a, b) => a.name.localeCompare(b.name));
+      const page = f.limit ? items.slice(f.offset ?? 0, (f.offset ?? 0) + f.limit) : items;
+      return { items: page.map(copy), total: items.length };
+    },
+    async update(id, patch) {
+      const r = res.get(id);
+      if (!r) return null;
+      Object.assign(r, clean(patch));
+      return copy(r);
+    },
+    async applyMovement({ resourceId, delta, createdAt, ...m }) {
+      const r = res.get(resourceId);
+      if (!r || r.stock + delta < 0) return null;
+      r.stock += delta;
+      r.updatedAt = createdAt;
+      const row = Object.freeze({ id: String(++moveSeq), resourceId, reportId: null, assigneeId: null, reason: null, ...clean(m), balanceAfter: r.stock, createdAt });
+      moves.push(row);
+      return { ...row };
+    },
+  };
+
+  const match = (m, f) => (!f.resourceId || m.resourceId === f.resourceId) && (!f.type || m.type === f.type) &&
+    (!f.reportId || m.reportId === f.reportId) && (!f.actorId || m.actorId === f.actorId) &&
+    (!f.from || t(m.createdAt) >= t(f.from)) && (!f.to || t(m.createdAt) <= t(f.to));
+
+  const movements = {
+    async list(f = {}) {
+      const items = moves.filter((m) => match(m, f)).sort((a, b) => t(b.createdAt) - t(a.createdAt) || Number(b.id) - Number(a.id));
+      const page = f.limit ? items.slice(f.offset ?? 0, (f.offset ?? 0) + f.limit) : items;
+      return { items: page.map((m) => ({ ...m })), total: items.length };
+    },
+    async outstanding(resourceId) {
+      const by = new Map();
+      for (const m of moves) {
+        if (m.resourceId !== resourceId || !m.assigneeId || !['asignacion', 'devolucion'].includes(m.type)) continue;
+        by.set(m.assigneeId, (by.get(m.assigneeId) ?? 0) + (m.type === 'asignacion' ? m.quantity : -m.quantity));
+      }
+      return [...by].filter(([, q]) => q > 0).map(([assigneeId, quantity]) => ({ assigneeId, quantity }));
+    },
+    async totals(f = {}) {
+      const by = new Map();
+      for (const m of moves.filter((x) => match(x, f))) {
+        const k = `${m.resourceId}|${m.type}`;
+        const e = by.get(k) ?? { resourceId: m.resourceId, type: m.type, quantity: 0, count: 0 };
+        e.quantity += m.quantity;
+        e.count += 1;
+        by.set(k, e);
+      }
+      return [...by.values()];
+    },
+  };
+
+  return { resources, movements };
 }

@@ -18,6 +18,7 @@ import Audit from './pages/admin/Audit.jsx';
 import ChangeLog from './pages/admin/ChangeLog.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import Incidents from './pages/admin/Incidents.jsx';
+import Inventory from './pages/admin/Inventory.jsx';
 import OpsConfig from './pages/admin/OpsConfig.jsx';
 import OpsReport from './pages/admin/OpsReport.jsx';
 import ReportDetail from './pages/admin/ReportDetail.jsx';
@@ -48,6 +49,7 @@ const ADMIN_PAGES = {
   '/admin/indicadores': [() => <OpsReport />, 'indicadores'],
   '/admin/bitacora': [(q) => <ChangeLog key={q.report ?? ''} query={q} />, 'bitacora'],
   '/admin/configuracion': [() => <OpsConfig />, 'configuracion'],
+  '/admin/inventario': [() => <Inventory />, 'recursos'],
   '/admin/usuarios': [() => <Users />, 'usuarios'],
   '/admin/roles': [() => <Roles />, 'roles'],
   '/admin/auditoria': [() => <Audit />, 'auditoria'],

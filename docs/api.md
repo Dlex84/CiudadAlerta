@@ -114,3 +114,22 @@ Filtros comunes de reportes (lista, panel y reportes operativos): `status` (uno 
 ## Bitácora (HU-2.8)
 `GET /changelog?report&actorId&entity&action&result&from&to&page&limit` (permiso `bitacora.read`). No existen rutas para modificarla.
 Entidades: `report`, `approval`, `approval_steps`, `incident`, `report_type`, `export`. Resultado: `success` | `rejected`.
+
+---
+
+# Épica 3 — Recursos e inventario 🔒
+
+`:id` de un recurso acepta el UUID o el código (`REC-0001`).
+
+| Ruta | Permiso | Notas |
+|---|---|---|
+| `GET /inventory/meta` | recursos.read | Tipos de recurso, tipos de movimiento y estados de existencia |
+| `GET /resources?q&kind&low=1&active=all\|false&page&limit` | recursos.read | Por defecto solo activos |
+| `POST /resources` | recursos.create | `{name, kind: material\|equipo, unit, minStock?, location?}` → `201`. `resource_name_taken` |
+| `GET /resources/:id` | recursos.read | `{resource, outstanding[], movements[]}` (últimos 20; `outstanding` = equipos en manos de cada persona) |
+| `PATCH /resources/:id` | recursos.update | `{name?, unit?, minStock?, location?, isActive?}`; `stock` es de solo lectura (`stock_read_only`) |
+| `GET /resources/:id/availability?quantity` | recursos.read | `{available, requested, sufficient, stockStatus, outstanding}` |
+| `POST /resources/:id/movements` | movimientos.create | `{type: entrada\|salida\|asignacion\|devolucion, quantity, reason?, report?, assigneeId?}` → `201 {movement, resource}`. Errores: `insufficient_stock` (con `details.available`), `report_required`, `invalid_report`, `wrong_kind`, `invalid_assignee`, `return_exceeds_assigned`, `resource_inactive`, `invalid_reason` |
+| `GET /movements?resource&type&report&actorId&from&to&page&limit` | movimientos.read | Historial (solo lectura; no hay rutas para modificarlo) |
+| `GET /inventory/summary?from&to` | recursos.read | `{generatedAt, filters, totals, rows[]}` |
+| `GET /inventory/summary.csv?from&to` | movimientos.read | `text/csv` con fecha de generación y periodo |

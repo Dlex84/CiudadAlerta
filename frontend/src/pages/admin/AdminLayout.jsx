@@ -17,6 +17,12 @@ const GROUPS = [
     ],
   },
   {
+    title: 'Inventario',
+    items: [
+      { to: '/admin/inventario', label: 'Recursos e inventario', module: 'recursos' },
+    ],
+  },
+  {
     title: 'Administración',
     items: [
       { to: '/admin/usuarios', label: 'Usuarios', module: 'usuarios' },

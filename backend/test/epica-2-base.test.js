@@ -40,7 +40,7 @@ test('actualizar una base de la Épica 1: agrega los módulos nuevos sin pisar l
   assert.equal(map.usuarios.read, false, 'respeta la edición del administrador');
   assert.equal(map.aprobaciones.update, true, 'recibe los módulos nuevos');
   assert.equal(map.asignaciones.update, true);
-  assert.equal((await repos.roles.getPermissions(sup.id)).length, 12, 'sin filas duplicadas');
+  assert.equal((await repos.roles.getPermissions(sup.id)).length, 14, 'sin filas duplicadas');
   assert.ok(await repos.roles.findByCode('operador'));
   assert.equal((await repos.reportTypes.list()).length, 4);
   assert.equal((await repos.approvalSteps.listByType('agua')).length, 1);
