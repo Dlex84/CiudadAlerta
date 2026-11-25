@@ -4,7 +4,8 @@
 import { createServices } from '../services/index.js';
 import { loadConfig } from '../config.js';
 import { buildPermissionMap } from '../domain/permissions.js';
-import { seedOperationsCatalog, seedSystemRoles } from '../domain/seed-data.js';
+import { readFile } from 'node:fs/promises';
+import { seedLicensingCatalog, seedOperationsCatalog, seedSystemRoles } from '../domain/seed-data.js';
 import { hashPassword } from '../lib/passwords.js';
 import { createPgRepos } from '../repositories/pg/index.js';
 import { createPool } from './pool.js';
@@ -30,6 +31,7 @@ try {
   const repos = createPgRepos(pool);
   await seedSystemRoles(repos);
   await seedOperationsCatalog(repos);
+  await seedLicensingCatalog(repos);
   if (await repos.users.findByEmail('supervisor@demo.local')) {
     console.log('ℹ Los datos de ejemplo ya existen. Nada que hacer.');
   } else {
@@ -81,6 +83,53 @@ try {
     await I.move(sup, ladder.id, { type: 'asignacion', quantity: 1, assigneeId: op.user.id, report: d.code });
     console.log(`✔ Datos de ejemplo creados. Contraseña de todos: ${PASSWORD}`);
     for (const [code, name, email] of PEOPLE) console.log(`  ${code.padEnd(10)} ${email.padEnd(24)} ${name}`);
+  }
+  // ── Épica 4: licenciamiento (bloque propio: se agrega aunque ya existan los datos de las épicas 1 a 3) ──
+  if (await repos.users.findByEmail('licencias@demo.local')) {
+    console.log('ℹ Los datos de ejemplo de licenciamiento ya existen.');
+  } else {
+    const services = createServices({ repos, mailer: { async send() {} }, geoip: { lookup: () => null }, avatars: null, config });
+    const asUser = async (email) => {
+      const user = await repos.users.findByEmail(email);
+      if (!user) return null;
+      const role = await repos.roles.findById(user.roleId);
+      return { user, role, permissions: buildPermissionMap(role, await repos.roles.getPermissions(role.id)) };
+    };
+    const role = await repos.roles.findByCode('licenciamiento');
+    await repos.users.create({ fullName: 'Marta Licencias', email: 'licencias@demo.local', roleId: role.id, status: 'active', passwordHash: await hashPassword(PASSWORD) });
+    const lic = await asUser('licencias@demo.local');
+    const S = services.software;
+    const L = services.licenses;
+    const C = services.compliance;
+    const lock = async (dir) => JSON.parse(await readFile(new URL(`../../../${dir}/package-lock.json`, import.meta.url), 'utf8'));
+
+    // HU-4.2: el inventario sale de los package-lock.json reales del proyecto.
+    const back = await S.importLockfile(lic, { projectCode: 'ciudadalerta-backend', lockfile: await lock('backend'), includeTransitive: true });
+    const front = await S.importLockfile(lic, { projectCode: 'ciudadalerta-frontend', lockfile: await lock('frontend') });
+    // Casos para revisar en la demostración: AGPL dentro de software comercial y un componente sin licencia.
+    await S.createComponent(lic, { projectCode: 'municipal', name: 'Ghostscript', version: '10.04.0', kind: 'aplicacion', declaredLicense: 'AGPL-3.0-only', licenseId: 'AGPL-3.0-only', repositoryUrl: 'https://www.ghostscript.com' });
+    await S.createComponent(lic, { projectCode: 'municipal', name: 'Visor de mapas interno', version: '2.1', kind: 'aplicacion' });
+    // HU-4.5: una revisión ya cerrada, con su evidencia.
+    const pg = (await S.listComponents({ project: 'ciudadalerta-backend', q: 'pg', direct: '1' })).items.find((c) => c.name === 'pg');
+    const notice = await C.createEvidenceLink(lic, { title: 'LICENSE de node-postgres', kind: 'aviso', classification: 'publica', url: 'https://github.com/brianc/node-postgres/blob/master/LICENSE', componentId: pg?.id, projectCode: 'ciudadalerta-backend' });
+    if (pg) await S.review(lic, pg.id, { decision: 'aprobado', obligations: 'Conservar el aviso de copyright MIT.', evaluation: 'Licencia MIT, compatible con el proyecto (MIT). Se distribuye solo en el servidor.', evidenceId: notice.id });
+
+    // HU-4.3 / HU-4.4: licencias comerciales del municipio, una a punto de vencer.
+    const inDays = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+    const m365 = await L.create(lic, { vendor: 'Microsoft', product: 'Microsoft 365', edition: 'E3', modality: 'suscripcion', metric: 'usuario', quantity: 5, startsOn: inDays(-345), expiresOn: inDays(20), alertDays: 30, licenseKey: 'M365-DEMO-KEY-0001', contractRef: 'CT-2025-114' });
+    const arcgis = await L.create(lic, { vendor: 'Esri', product: 'ArcGIS Pro', edition: 'Standard', modality: 'suscripcion', metric: 'equipo', quantity: 2, startsOn: inDays(-60), expiresOn: inDays(305), alertDays: 45, contractRef: 'CT-2026-031' });
+    await L.create(lic, { vendor: 'Adobe', product: 'Acrobat Pro', modality: 'perpetua', metric: 'usuario', quantity: 3, startsOn: inDays(-700) });
+    for (const email of ['supervisor@demo.local', 'gerente@demo.local', 'licencias@demo.local']) {
+      const u = await repos.users.findByEmail(email);
+      if (u) await L.assign(lic, m365.id, { targetType: 'usuario', targetUserId: u.id });
+    }
+    await L.assign(lic, arcgis.id, { targetType: 'equipo', targetName: 'PC-GIS-01' });
+    await C.createEvidenceLink(lic, { title: 'Contrato Microsoft 365 2025-2026', kind: 'contrato', classification: 'confidencial', url: 'https://docs.example.do/contratos/CT-2025-114', licenseId: m365.id });
+
+    // HU-4.6: primera revisión de cumplimiento.
+    const scan = await C.scan();
+    console.log(`✔ Licenciamiento: ${back.created + front.created} componentes importados, 3 licencias adquiridas, ${scan.created} alertas.`);
+    console.log(`  licenciamiento licencias@demo.local     Marta Licencias (contraseña ${PASSWORD})`);
   }
 } finally {
   await pool.end();

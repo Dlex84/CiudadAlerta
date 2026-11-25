@@ -45,3 +45,54 @@ flowchart LR
 
 ## Fuera de alcance de esta entrega (anotado para el futuro)
 Verificación de correo al registrarse, doble factor, bloqueo automático por intentos fallidos, limitador de intentos compartido entre instancias (Redis), almacenamiento de fotos en S3/MinIO, exportación CSV de la auditoría, retención/purga de `access_logs`.
+
+## Épica 4: licenciamiento de software
+
+Misma arquitectura por capas y ningún paquete nuevo. Piezas agregadas:
+
+| Capa | Archivo | Responsabilidad |
+|---|---|---|
+| Dominio | `src/domain/licensing.js` | Catálogos, vigencia (RN-4.6), reglas de posible incompatibilidad (RN-4.9) y lectura de `package-lock.json`. Funciones puras, sin BD ni HTTP. |
+| Dominio | `src/domain/licensing-catalog.js` | Catálogo inicial de 14 licencias (fuente SPDX) y proyectos inventariados |
+| Servicios | `src/services/software.service.js` | HU-4.1 catálogo · HU-4.2 inventario e importación · HU-4.5 revisiones |
+| Servicios | `src/services/licenses.service.js` | HU-4.3 licencias adquiridas · HU-4.4 asignación, reasignación y conciliación · RN-4.8 confidencialidad |
+| Servicios | `src/services/compliance.service.js` | HU-4.6 alertas · HU-4.7 evidencias · HU-4.8 reportes y CSV |
+| Repositorios | `src/repositories/pg/licensing.js` | SQL de las 10 tablas; gemelo en memoria en `test/helpers/memory-licensing.js` |
+| Adaptador | `src/adapters/evidence-files.js` | Archivos de evidencias en disco, sin ruta pública; detecta el tipo real por el contenido |
+| HTTP | `src/http/routes/licenciamientos.js` | 32 rutas; cada una declara su permiso |
+| Frontend | `frontend/src/pages/admin/Licensing.jsx` y `licensing/*.jsx` | Una pestaña por módulo; solo aparecen las que el rol puede consultar |
+
+**Autorización.** Cinco módulos de permiso nuevos: `licencias`, `software`, `cumplimiento`, `evidencias` y `confidencial`. Este último no protege una pantalla sino **datos**: el servicio vacía claves y contratos y oculta las evidencias confidenciales a quien no lo tiene (RN-4.8, RN-4.10).
+
+**Alertas.** El mismo temporizador del servidor (`ALERT_SCAN_MINUTES`) que revisa los reportes vencidos de la Épica 2 ejecuta `compliance.scan()`; también se lanza con el botón *Revisar ahora*.
+
+Flujo de una asignación (HU-4.4), con la validación repartida entre capas:
+
+```mermaid
+sequenceDiagram
+  actor U as Responsable
+  participant F as Frontend
+  participant H as HTTP (licenciamientos.js)
+  participant S as licenses.service
+  participant R as pg/licensing.js
+  participant DB as PostgreSQL
+  U->>F: Asignar ArcGIS Pro a PC-GIS-02
+  F->>H: POST /api/licenses/:id/assignments
+  H->>H: sesión válida y permiso licencias.update
+  H->>S: assign(principal, id, body)
+  S->>S: métrica equipo, licencia activa y no vencida
+  S->>R: assign(...)
+  R->>DB: UPDATE assigned+1 WHERE assigned < quantity, e INSERT (una sentencia)
+  alt sin cupo
+    DB-->>R: 0 filas
+    R-->>S: no_capacity
+    S-->>H: 409 no_licenses_available (queda en la bitácora como rechazada)
+  else destinatario ya asignado
+    DB-->>R: violación del índice único
+    S-->>H: 409 already_assigned
+  else correcto
+    DB-->>R: asignación
+    S-->>H: 201 con las cantidades actualizadas
+  end
+  H-->>F: JSON
+```

@@ -133,3 +133,36 @@ Entidades: `report`, `approval`, `approval_steps`, `incident`, `report_type`, `e
 | `GET /movements?resource&type&report&actorId&from&to&page&limit` | movimientos.read | Historial (solo lectura; no hay rutas para modificarlo) |
 | `GET /inventory/summary?from&to` | recursos.read | `{generatedAt, filters, totals, rows[]}` |
 | `GET /inventory/summary.csv?from&to` | movimientos.read | `text/csv` con fecha de generación y periodo |
+
+
+---
+
+# Épica 4 — Licenciamiento de software 🔒
+
+`:id` de una licencia adquirida acepta el UUID o el código (`LIC-0001`); de una licencia del catálogo, el id o el SPDX (`MIT`).
+
+| Ruta | Permiso | Notas |
+|---|---|---|
+| `GET /licensing/meta` | licencias.read o software.read | Categorías, estados, decisiones, métricas, tipos de alerta, criticidades, clasificaciones y proyectos |
+| `GET /license-types?q&category&active` · `GET /license-types/:id` | licencias.read o software.read | HU-4.1. Incluye en cuántos componentes se usa |
+| `POST /license-types` · `PATCH /license-types/:id` | licencias.create / update | `{spdxId, name, version?, category, sourceUrl?, obligations, requiresAttribution, redistribution, modification, restrictions?, verifiedOn?}`. `invalid_spdx_id`, `license_type_exists`, `source_required`, `invalid_verified_on` |
+| `GET /software/components?project&q&status&category&direct=1&dev=0|1&flagged=1&unreviewed=1&page&limit` | software.read | HU-4.2. Cada componente trae `license`, `latestReview`, `flags` (RN-4.9) y `duplicates` |
+| `POST /software/components` | software.create | `{projectCode, name, version, kind, repositoryUrl?, declaredLicense?, licenseId?}` → `{component, potentialDuplicates}`. `component_exists` |
+| `POST /software/import` | software.create | `{projectCode, lockfile, includeTransitive?}` (package-lock v2/v3, ≤ 1 MB) → `{read, considered, created, existing, confirmed, pending, withoutLicense}` |
+| `GET /software/components/:id` · `PATCH /software/components/:id` | software.read / update | Detalle con revisiones y duplicados; `{licenseId}` confirma o devuelve a revisión |
+| `POST /software/components/:id/reviews` | software.update | HU-4.5. `{decision, obligations, evaluation, licenseId?, evidenceId?}`. `license_required`, `invalid_evidence` |
+| `GET /licenses?q&vendor&validity` · `GET /licenses/:id` | licencias.read | HU-4.3. Claves y contratos vacíos sin `confidencial.read` (`confidentialHidden: true`) |
+| `POST /licenses` · `PATCH /licenses/:id` | licencias.create / update | `{vendor, product, edition?, modality, metric, quantity?, startsOn, expiresOn?, alertDays?, licenseKey?, contractRef?, notes?}`. `expires_on_required`, `quantity_below_assigned`, `license_in_use`, `confidential_forbidden` |
+| `POST /licenses/:id/assignments` | licencias.update | HU-4.4. `{targetType, targetUserId?, targetName?}`. `wrong_target_type`, `no_licenses_available`, `already_assigned`, `license_expired`, `license_inactive` |
+| `POST /license-assignments/:id/release` · `/reassign` | licencias.update | `{reason}` (+ nuevo destinatario al reasignar). `already_released`, `same_target` |
+| `GET /licenses/reconciliation` | licencias.read | Adquiridas, asignadas, disponibles, uso y si el contador cuadra |
+| `GET /compliance/rules` · `PATCH /compliance/rules/:kind` | cumplimiento.read / update | HU-4.6. `{daysBefore?, criticality?, dedupeDays?, isActive?}` |
+| `POST /compliance/scan` | cumplimiento.update | `{checked, created, skipped}` |
+| `GET /compliance/alerts?state&kind&criticality&responsibleId` · `GET /compliance/alerts/:id` | cumplimiento.read | `state`: pendiente, vencida o atendida; incluye `counts` y el historial de seguimiento |
+| `POST /compliance/alerts/:id/actions` | cumplimiento.update | `{action: responsable|seguimiento|atender, comment?, responsibleId?}`. `invalid_comment`, `alert_already_attended` |
+| `GET /evidences?project&component&license&kind&q` · `GET /evidences/:id` | evidencias.read | HU-4.7. Las confidenciales solo con `confidencial.read` (si no, `404`) |
+| `POST /evidences` | evidencias.create | Enlace: `{title, kind, classification, version?, url, projectCode?, componentId?, licenseId?}`. `evidence_unlinked` |
+| `POST /evidences/upload?title&kind&classification&…&fileName` | evidencias.create | Cuerpo = archivo crudo (PDF, PNG, JPG o texto, ≤ 5 MB; se verifica el contenido). `415 unsupported_file`, `413 file_too_large` |
+| `GET /evidences/:id/file` | evidencias.read | Descarga (queda en la bitácora) |
+| `GET /compliance/report?project&category&status&vendor&validity&expiresBefore` | cumplimiento.read | HU-4.8. `{cutoff, filters, components, licenses}` |
+| `GET /compliance/report.csv?…` | cumplimiento.create | CSV con fecha de corte, filtros y aviso de que no es un dictamen legal |

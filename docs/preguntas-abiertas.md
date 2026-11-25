@@ -43,3 +43,14 @@ El plan pide validar en equipo los tipos, estados, aprobaciones, plazos y roles.
 | 25 | **Qué es un «recurso».** | Materiales (se consumen) y equipos (se prestan y se devuelven) del almacén municipal. | ¿Incluye personal o vehículos? |
 | 26 | **Ajustes de inventario** (mermas, conteos físicos). | No hay movimiento de ajuste; se corrige con entradas o salidas con motivo. | ¿Hace falta un tipo «ajuste» con aprobación? |
 | 27 | **Salida sin reporte.** | Toda salida de material exige el reporte que se atiende. | ¿Hay consumos internos sin reporte? |
+
+
+## Épica 4 — Licenciamiento de software
+
+| # | Tema | Decisión provisional | Confirmar |
+|---|---|---|---|
+| 28 | **Importar SBOM o manifests.** | Se importa `package-lock.json` de npm (v2 y v3). | ¿Hace falta CycloneDX o SPDX, u otros ecosistemas (Maven, pip)? |
+| 29 | **Quién valida las decisiones de cumplimiento.** | El rol *Responsable de licenciamiento*; el sistema solo marca y alerta. | ¿Interviene asesoría legal? ¿Con qué rol? |
+| 30 | **Reglas de compatibilidad.** | Copyleft fuerte en proyecto permisivo o propietario, propietario en proyecto abierto, categoría desconocida (RN-4.9). | ¿Política formal de licencias permitidas y prohibidas? |
+| 31 | **Licencias de sitio (sin límite).** | Cantidad vacía = sin límite de asignaciones. | ¿Hay contratos por núcleos o por volumen? |
+| 32 | **Almacenamiento de evidencias.** | Disco local del servidor, sin ruta pública. | ¿Gestor documental del municipio? |

@@ -3,7 +3,7 @@
 Plataforma comunitaria para **reportar problemas de tu entorno** (un bache, un poste apagado…) y darles seguimiento hasta que se resuelvan.
 Proyecto de la materia **ISO615 — Desarrollo de Software con Tecnología Open Source**.
 
-> **Estado:** Épica 1 (usuarios y acceso), Épica 2 (gestión de operaciones) y Épica 3 (recursos e inventario) con código completo. Mapa y fotografías quedan para una próxima épica.
+> **Estado:** Épica 1 (usuarios y acceso), Épica 2 (gestión de operaciones), Épica 3 (recursos e inventario) y Épica 4 (licenciamiento de software) con código completo. Mapa y fotografías quedan para una próxima épica.
 
 ## Qué incluye hoy
 
@@ -31,8 +31,16 @@ Proyecto de la materia **ISO615 — Desarrollo de Software con Tecnología Open 
 | HU-3.4 | Validación de disponibilidad: la existencia nunca queda negativa; aviso de bajo mínimo |
 | HU-3.5 | Historial de movimientos de solo inserción, con filtros |
 | HU-3.6 | Reporte de existencias y movimientos con exportación CSV |
+| HU-4.1 | Catálogo de licencias (SPDX) con condiciones, categoría, fuente y fecha de verificación |
+| HU-4.2 | Inventario de software importado del propio `package-lock.json`, con estado de licencia y duplicados |
+| HU-4.3 | Licencias comerciales con cantidades, vigencia, aviso de vencimiento y claves confidenciales |
+| HU-4.4 | Asignación a usuarios, equipos o aplicaciones sin superar el cupo; liberar y reasignar con historial; conciliación |
+| HU-4.5 | Revisión de obligaciones Open Source y posibles incompatibilidades para revisión humana |
+| HU-4.6 | Alertas de cumplimiento por tipo y criticidad, con responsable, seguimiento y sin duplicados |
+| HU-4.7 | Evidencias enlazadas o adjuntas, restringidas según su clasificación |
+| HU-4.8 | Reporte de inventario y cumplimiento con fecha de corte, filtros y exportación CSV |
 
-Detalle y criterios: [`docs/backlog/epica-1.md`](docs/backlog/epica-1.md) · [`docs/backlog/epica-2.md`](docs/backlog/epica-2.md) · [`docs/backlog/epica-3.md`](docs/backlog/epica-3.md).
+Detalle y criterios: [`docs/backlog/epica-1.md`](docs/backlog/epica-1.md) · [`docs/backlog/epica-2.md`](docs/backlog/epica-2.md) · [`docs/backlog/epica-3.md`](docs/backlog/epica-3.md) · [`docs/backlog/epica-4.md`](docs/backlog/epica-4.md).
 
 ## Stack (todo open source)
 
@@ -71,7 +79,7 @@ Todo en contenedores (una sola imagen que sirve API + frontend): `docker compose
 
 ```bash
 cd backend
-npm test                                  # 113 pruebas, sin base de datos (repositorios en memoria)
+npm test                                  # 133 pruebas, sin base de datos (repositorios en memoria)
 
 # además contra PostgreSQL real (reinicia el esquema de esa base; el nombre debe contener "test"):
 createdb ... ciudadalerta_test
@@ -93,7 +101,7 @@ scripts/            crear-issues.sh (publica las historias como issues de GitHub
 - [Arquitectura](docs/arquitectura.md) · [Modelo de datos](docs/modelo-datos.md) · [API](docs/api.md)
 - [Roles y permisos](docs/roles-y-permisos.md)
 - [Preguntas abiertas para el Product Owner](docs/preguntas-abiertas.md)
-- [Backlog de la Épica 1](docs/backlog/epica-1.md) · [Backlog de la Épica 2](docs/backlog/epica-2.md) · [Prototipo navegable](docs/prototipo/prototipo-navegable.html)
+- [Backlog de la Épica 1](docs/backlog/epica-1.md) · [Épica 2](docs/backlog/epica-2.md) · [Épica 3](docs/backlog/epica-3.md) · [Épica 4](docs/backlog/epica-4.md) · [Prototipo navegable](docs/prototipo/prototipo-navegable.html)
 - [Cómo contribuir](CONTRIBUTING.md)
 
 ## Licencia
