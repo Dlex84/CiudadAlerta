@@ -37,8 +37,8 @@ async function readBody(req, limit) {
  * Crea la aplicación. Todo lo externo (BD, correo, geolocalización, archivos) entra por parámetro,
  * por eso las pruebas pueden usar repositorios en memoria.
  */
-export function createApp({ config, repos, mailer, geoip, avatars, clock = () => new Date(), logger = console }) {
-  const services = createServices({ repos, mailer, geoip, avatars, config, clock });
+export function createApp({ config, repos, mailer, geoip, avatars, evidenceFiles, clock = () => new Date(), logger = console }) {
+  const services = createServices({ repos, mailer, geoip, avatars, evidenceFiles, config, clock });
   const limiter = createRateLimiter(config.rateLimit);
   const router = buildRoutes({ services, config, avatars, limiter });
 
