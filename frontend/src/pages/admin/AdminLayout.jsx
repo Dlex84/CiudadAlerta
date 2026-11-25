@@ -23,6 +23,12 @@ const GROUPS = [
     ],
   },
   {
+    title: 'Licenciamiento',
+    items: [
+      { to: '/admin/licenciamiento', label: 'Licencias y cumplimiento', module: 'licencias' },
+    ],
+  },
+  {
     title: 'Administración',
     items: [
       { to: '/admin/usuarios', label: 'Usuarios', module: 'usuarios' },

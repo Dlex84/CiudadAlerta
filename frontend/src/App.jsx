@@ -19,6 +19,7 @@ import ChangeLog from './pages/admin/ChangeLog.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import Incidents from './pages/admin/Incidents.jsx';
 import Inventory from './pages/admin/Inventory.jsx';
+import Licensing from './pages/admin/Licensing.jsx';
 import OpsConfig from './pages/admin/OpsConfig.jsx';
 import OpsReport from './pages/admin/OpsReport.jsx';
 import ReportDetail from './pages/admin/ReportDetail.jsx';
@@ -33,6 +34,7 @@ const CITIZEN = new Set(['/inicio', '/perfil', '/reportes', '/reportes/nuevo', '
 function adminHome(can) {
   if (can('indicadores', 'read')) return '/admin/panel';
   if (can('operaciones', 'read')) return '/admin/reportes';
+  if (can('licencias', 'read')) return '/admin/licenciamiento';
   if (can('usuarios', 'read')) return '/admin/usuarios';
   if (can('roles', 'read')) return '/admin/roles';
   if (can('auditoria', 'read')) return '/admin/auditoria';
@@ -50,6 +52,7 @@ const ADMIN_PAGES = {
   '/admin/bitacora': [(q) => <ChangeLog key={q.report ?? ''} query={q} />, 'bitacora'],
   '/admin/configuracion': [() => <OpsConfig />, 'configuracion'],
   '/admin/inventario': [() => <Inventory />, 'recursos'],
+  '/admin/licenciamiento': [(q) => <Licensing key={q.tab ?? ''} tab={q.tab} />, 'licencias'],
   '/admin/usuarios': [() => <Users />, 'usuarios'],
   '/admin/roles': [() => <Roles />, 'roles'],
   '/admin/auditoria': [() => <Audit />, 'auditoria'],

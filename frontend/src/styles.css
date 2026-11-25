@@ -118,7 +118,7 @@ td.actions .btn { margin: 2px 0 2px 6px; }
 /* ── Épica 2: operaciones ─────────────────────────────────────────────────────── */
 .chip.info { background: #e3eefb; color: #1d4f8a; }
 .text-bad { color: var(--danger); }
-.linklike { background: none; border: 0; padding: 0; color: var(--brand); font-weight: 600; cursor: pointer; }
+.linklike { text-align: left; background: none; border: 0; padding: 0; color: var(--brand); font-weight: 600; cursor: pointer; }
 .linklike:hover { text-decoration: underline; }
 .row-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
