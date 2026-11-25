@@ -1,6 +1,7 @@
 // Repositorios en memoria con el MISMO contrato que src/repositories/pg/*.
 // Permiten probar servicios y API completa sin PostgreSQL.
 import { randomUUID } from 'node:crypto';
+import { createLicensingMemoryRepos } from './memory-licensing.js';
 import { CLOSED_STATUSES } from '../../src/domain/operations.js';
 import { conflict } from '../../src/http/errors.js';
 
@@ -105,7 +106,7 @@ export function createMemoryRepos() {
     async invalidateAllForUser(userId) { for (const t of db.tokens.values()) if (t.userId === userId && !t.usedAt) t.usedAt = new Date(); },
   };
 
-  return { users, roles, sessions, accessLogs, resetTokens, ...createOperationsMemoryRepos(), ...createInventoryMemoryRepos(), _db: db };
+  return { users, roles, sessions, accessLogs, resetTokens, ...createOperationsMemoryRepos(), ...createInventoryMemoryRepos(), ...createLicensingMemoryRepos(), _db: db };
 }
 
 // ── Épica 2 ──────────────────────────────────────────────────────────────────────

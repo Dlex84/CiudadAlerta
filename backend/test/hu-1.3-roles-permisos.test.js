@@ -14,7 +14,7 @@ describe('HU-1.3 Roles', () => {
   test('lista los roles disponibles (incluye los del sistema y conteo de usuarios)', async () => {
     const res = await root.get('/api/roles');
     assert.equal(res.status, 200);
-    assert.deepEqual(res.data.items.map((r) => r.code), ['super_admin', 'admin', 'supervisor', 'operador', 'gerente', 'auditor', 'ciudadano']);
+    assert.deepEqual(res.data.items.map((r) => r.code), ['super_admin', 'admin', 'supervisor', 'operador', 'gerente', 'auditor', 'ciudadano', 'licenciamiento']);
     assert.equal(res.data.items[0].userCount, 1);
   });
 
@@ -73,7 +73,7 @@ describe('HU-1.4 Permisos por módulo', () => {
     assert.equal(res.status, 200);
     const aud = res.data.permissions.find((p) => p.module === 'auditoria');
     assert.deepEqual([aud.create, aud.read, aud.update, aud.delete], [false, true, false, false]);
-    assert.equal(res.data.permissions.length, 14); // 5 de la Épica 1 + 7 de la Épica 2 + 2 de la Épica 3
+    assert.equal(res.data.permissions.length, 19); // 5 de la Épica 1 + 7 de la Épica 2 + 2 de la Épica 3 + 5 de la Épica 4
   });
 
   test('los cambios aplican de inmediato, incluso a sesiones ya abiertas', async () => {
