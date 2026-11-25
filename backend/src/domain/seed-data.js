@@ -2,6 +2,8 @@ import { flagsToRow, fromShorthand, MODULE_KEYS, SUPER_ADMIN_CODE } from './perm
 import { hashPassword } from '../lib/passwords.js';
 import { requireEmail, requirePassword, requireText } from '../lib/validate.js';
 import { DEFAULT_APPROVAL_STEPS, REPORT_TYPES } from './operations.js';
+import { DEFAULT_ALERT_RULES } from './licensing.js';
+import { LICENSE_CATALOG, SOFTWARE_PROJECTS } from './licensing-catalog.js';
 
 /**
  * Roles base de CiudadAlerta.
@@ -22,7 +24,7 @@ export const SYSTEM_ROLES = [
     name: 'Administrador',
     description: 'Gestiona usuarios y consulta roles y auditoría.',
     dashboardPath: '/admin',
-    permissions: { recursos: 'CRUD', movimientos: 'CR',
+    permissions: { licencias: 'CRUD', software: 'CRUD', cumplimiento: 'CRU', evidencias: 'CRU', confidencial: 'R', recursos: 'CRUD', movimientos: 'CR',
       usuarios: 'CRUD', roles: 'R', auditoria: 'R', reportes: 'CRUD',
       operaciones: 'RU', asignaciones: 'RU', aprobaciones: 'R', incidencias: 'CRUD',
       configuracion: 'RU', indicadores: 'CR', bitacora: 'R',
@@ -33,7 +35,7 @@ export const SYSTEM_ROLES = [
     name: 'Supervisor',
     description: 'Asigna responsables y aprueba o devuelve reportes.',
     dashboardPath: '/admin',
-    permissions: { recursos: 'CRU', movimientos: 'CR',
+    permissions: { licencias: 'R', software: 'R', recursos: 'CRU', movimientos: 'CR',
       usuarios: 'R', auditoria: 'R', reportes: 'RU',
       operaciones: 'RU', asignaciones: 'RU', aprobaciones: 'RU', incidencias: 'CRU',
       configuracion: 'R', indicadores: 'CR', bitacora: 'R',
@@ -51,7 +53,7 @@ export const SYSTEM_ROLES = [
     name: 'Gerente',
     description: 'Consulta el panel y genera reportes operativos.',
     dashboardPath: '/admin',
-    permissions: { recursos: 'R', movimientos: 'R',
+    permissions: { licencias: 'R', software: 'R', cumplimiento: 'CR', evidencias: 'R', recursos: 'R', movimientos: 'R',
       operaciones: 'R', asignaciones: 'R', aprobaciones: 'R', incidencias: 'R',
       configuracion: 'R', indicadores: 'CR', bitacora: 'R',
     },
@@ -61,7 +63,7 @@ export const SYSTEM_ROLES = [
     name: 'Auditor',
     description: 'Consulta la bitácora de cambios y la auditoría de accesos.',
     dashboardPath: '/admin',
-    permissions: { recursos: 'R', movimientos: 'R',
+    permissions: { licencias: 'R', software: 'R', cumplimiento: 'R', evidencias: 'R', confidencial: 'R', recursos: 'R', movimientos: 'R',
       auditoria: 'R', operaciones: 'R', asignaciones: 'R', aprobaciones: 'R', incidencias: 'R',
       configuracion: 'R', indicadores: 'R', bitacora: 'R',
     },
@@ -72,6 +74,14 @@ export const SYSTEM_ROLES = [
     description: 'Vecino que crea y consulta reportes de su comunidad.',
     dashboardPath: '/inicio',
     permissions: { reportes: 'CR' },
+  },
+  // Épica 4
+  {
+    code: 'licenciamiento',
+    name: 'Responsable de licenciamiento',
+    description: 'Mantiene el catálogo de licencias, el inventario de software, las licencias adquiridas y el cumplimiento.',
+    dashboardPath: '/admin',
+    permissions: { licencias: 'CRUD', software: 'CRUD', cumplimiento: 'CRU', evidencias: 'CRU', confidencial: 'R', usuarios: 'R' },
   },
 ];
 
@@ -127,5 +137,20 @@ export async function seedOperationsCatalog(repos) {
       t.code,
       DEFAULT_APPROVAL_STEPS.map((s, i) => ({ ...s, stepOrder: i + 1 })),
     );
+  }
+}
+
+/** Épica 4: catálogo de licencias, proyectos inventariados y reglas de alerta. Idempotente. */
+export async function seedLicensingCatalog(repos) {
+  for (const l of LICENSE_CATALOG) {
+    if (!(await repos.licenseTypes.findBySpdx(l.spdxId))) await repos.licenseTypes.create({ ...l, isActive: true });
+  }
+  for (const p of SOFTWARE_PROJECTS) {
+    if (await repos.softwareProjects.findByCode(p.code)) continue;
+    const lic = await repos.licenseTypes.findBySpdx(p.licenseSpdx);
+    await repos.softwareProjects.create({ code: p.code, name: p.name, licenseId: lic.id, repositoryUrl: p.repositoryUrl });
+  }
+  for (const r of DEFAULT_ALERT_RULES) {
+    if (!(await repos.alertRules.findByKind(r.kind))) await repos.alertRules.create({ ...r, isActive: true });
   }
 }

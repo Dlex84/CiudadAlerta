@@ -16,6 +16,12 @@ export const MODULES = [
   // Épica 3
   { key: 'recursos', label: 'Recursos e inventario' },
   { key: 'movimientos', label: 'Movimientos de inventario' },
+  // Épica 4
+  { key: 'licencias', label: 'Licencias (catálogo, adquiridas y asignaciones)' },
+  { key: 'software', label: 'Inventario de software y revisión de obligaciones' },
+  { key: 'cumplimiento', label: 'Alertas y reportes de cumplimiento' },
+  { key: 'evidencias', label: 'Evidencias de licencias' },
+  { key: 'confidencial', label: 'Información confidencial (contratos y claves)' },
 ];
 export const MODULE_KEYS = MODULES.map((m) => m.key);
 export const ACTIONS = ['create', 'read', 'update', 'delete'];
