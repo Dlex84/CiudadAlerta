@@ -196,6 +196,7 @@ describe('Épica 4: gestión de licenciamientos', () => {
     assert.equal(re.status, 201);
     const detail = (await lic.c.get(`/api/licenses/${office.id}`)).data;
     assert.equal(detail.assignments.length, 3, 'liberar y reasignar conservan las filas');
+    assert.ok(detail.assignments.every((a) => a.assignedAt && a.assignedByName === 'Prueba licenciamiento'), 'destinatario, fecha y responsable');
     assert.deepEqual(detail.assignments.filter((a) => a.active).map((a) => a.targetName), ['Prueba auditor']);
     assert.match(detail.assignments.find((a) => a.targetName === 'Prueba supervisor').releaseReason, /Reasignada: Rotación/);
   });
@@ -214,6 +215,7 @@ describe('Épica 4: gestión de licenciamientos', () => {
     const notice = await lic.c.post('/api/evidences', { title: 'Atribuciones del backend', kind: 'atribucion', classification: 'publica', url: 'https://github.com/Dlex84/CiudadAlerta/blob/main/LICENSE', projectCode: 'ciudadalerta-backend', version: '2' });
     assert.equal(notice.data.authorName, 'Prueba licenciamiento');
     assert.equal(notice.data.version, '2');
+    assert.ok(notice.data.createdAt, 'autor, fecha y versión');
 
     const forManager = await ger.c.get('/api/evidences');
     assert.deepEqual(forManager.data.items.map((e) => e.title), ['Atribuciones del backend']);
@@ -237,6 +239,15 @@ describe('Épica 4: gestión de licenciamientos', () => {
     assert.match(down.headers.get('content-disposition'), /attachment; filename="informe.pdf"/);
     assert.match(String(down.data), /%PDF-1\.4/);
     assert.equal((await ger.c.get(`/api/evidences?component=${up.data.component.id}`)).data.total, 1);
+
+    // HU-4.5: la revisión documenta su evidencia; «requiere revisión legal» no cierra el pendiente.
+    const reviews = `/api/software/components/${up.data.component.id}/reviews`;
+    const review = { decision: 'requiere_revision', obligations: 'Publicar el código si se distribuye.', evaluation: 'GPL directa en proyecto MIT: se consulta a asesoría legal.' };
+    assert.equal((await lic.c.post(reviews, { ...review, evidenceId: 999999 })).data.error.code, 'invalid_evidence');
+    const withEvidence = await lic.c.post(reviews, { ...review, evidenceId: up.data.id });
+    assert.equal(withEvidence.status, 201);
+    assert.equal(withEvidence.data.reviews[0].evidenceId, up.data.id);
+    assert.equal(withEvidence.data.component.reviewClosed, false);
   });
 
   // ── HU-4.6 ──────────────────────────────────────────────────────────────────
