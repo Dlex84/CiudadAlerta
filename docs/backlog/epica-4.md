@@ -30,6 +30,41 @@ CiudadAlerta es software libre (licencia MIT) hecho para una materia de tecnolog
 | Evidencias | HU-4.7 | Dónde está el contrato, el aviso o el informe que respalda cada decisión | Evidencias |
 | Reportes | HU-4.8 | Foto del inventario y de los riesgos a una fecha de corte | Reportes |
 
+### Actores y casos de uso
+
+Quién hace qué, según los permisos sembrados ([roles y permisos](../roles-y-permisos.md#épica-4)). El Administrador puede lo mismo que el Responsable de licenciamiento.
+
+```mermaid
+flowchart LR
+  RL([Responsable de<br/>licenciamiento])
+  GE([Gerente])
+  AU([Auditor])
+  SU([Supervisor])
+  SIS([Sistema:<br/>temporizador])
+
+  subgraph E4[Épica 4 — Licencias y cumplimiento]
+    UC1(Mantener catálogo de licencias · HU-4.1)
+    UC2(Registrar o importar componentes · HU-4.2)
+    UC3(Registrar licencias adquiridas · HU-4.3)
+    UC4(Asignar, liberar y reasignar · HU-4.4)
+    UC5(Revisar obligaciones OSS · HU-4.5)
+    UC6(Atender alertas · HU-4.6)
+    UC7(Adjuntar o enlazar evidencias · HU-4.7)
+    UC8(Consultar evidencias · HU-4.7)
+    UC9(Ver reportes · HU-4.8)
+    UC10(Exportar CSV · HU-4.8)
+    UC11(Ver claves y contratos confidenciales)
+    UC12(Generar alertas · HU-4.6)
+    UC0(Consultar catálogo, inventario y licencias)
+  end
+
+  RL --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC8 & UC9 & UC10 & UC11
+  GE --- UC0 & UC8 & UC9 & UC10
+  AU --- UC0 & UC8 & UC9 & UC11
+  SU --- UC0
+  SIS --- UC12
+```
+
 ### Proceso de cumplimiento Open Source
 
 ```mermaid
