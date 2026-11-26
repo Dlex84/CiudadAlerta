@@ -2,7 +2,7 @@
 
 Definidos en [`backend/src/domain/seed-data.js`](../backend/src/domain/seed-data.js). El seed es idempotente: no pisa lo que un administrador haya editado.
 
-**Módulos:** `usuarios`, `roles`, `permisos`, `auditoria` (Épica 1) y, de la Épica 2: `reportes`, `operaciones`, `asignaciones`, `aprobaciones`, `incidencias`, `configuracion`, `indicadores`, `bitacora`.
+**Módulos:** `usuarios`, `roles`, `permisos`, `auditoria` (Épica 1); `reportes`, `operaciones`, `asignaciones`, `aprobaciones`, `incidencias`, `configuracion`, `indicadores`, `bitacora` (Épica 2); `recursos`, `movimientos` (Épica 3); `licencias`, `software`, `cumplimiento`, `evidencias`, `confidencial` (Épica 4).
 **Acciones:** C = crear · R = consultar · U = modificar · D = eliminar.
 
 ### Épica 1
@@ -47,3 +47,36 @@ Al actualizar una base de la Épica 1, `npm run db:seed` agrega los módulos nue
 - Los permisos (y el rol) cambian en caliente: se consultan en cada request.
 
 > Operador, Gerente y Auditor vienen del plan de la Épica 2. Los roles *Agente Inmobiliario, Arquitecto, Ingeniero y Cliente* del backlog original no se sembraron; ver [preguntas abiertas](preguntas-abiertas.md). Si el PO confirma que aplican, se crean desde el panel o agregándolos a `SYSTEM_ROLES`.
+
+### Épica 3
+| Rol | recursos | movimientos |
+|---|:-:|:-:|
+| Super Administrador | CRUD | CRUD |
+| Administrador | CRUD | CR |
+| Supervisor | CRU | CR |
+| Operador / Técnico | R | CR |
+| Gerente · Auditor | R | R |
+| Ciudadano | — | — |
+
+### Épica 4
+Rol nuevo: **Responsable de licenciamiento** (`licenciamiento`, dashboard /admin), que además consulta usuarios para poder asignarles licencias.
+
+| Rol | licencias | software | cumplimiento | evidencias | confidencial |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Super Administrador | CRUD | CRUD | CRUD | CRUD | CRUD |
+| Administrador | CRUD | CRUD | CRU | CRU | R |
+| Responsable de licenciamiento | CRUD | CRUD | CRU | CRU | R |
+| Supervisor | R | R | — | — | — |
+| Gerente | R | R | CR | R | — |
+| Auditor | R | R | R | R | R |
+| Operador / Técnico · Ciudadano | — | — | — | — | — |
+
+**Qué significa cada acción en la Épica 4**
+
+| Módulo | C | R | U |
+|---|---|---|---|
+| `licencias` | registrar licencias del catálogo y licencias adquiridas | consultar catálogo, licencias, asignaciones y conciliación | editar, **asignar, liberar y reasignar** |
+| `software` | registrar componentes e **importar package-lock.json** | consultar el inventario | confirmar la licencia y **registrar revisiones** |
+| `cumplimiento` | **exportar CSV** | alertas, reglas y reportes | atender alertas, editar reglas, lanzar la revisión |
+| `evidencias` | enlazar o adjuntar | consultar y descargar las públicas e internas | — |
+| `confidencial` | — | ver claves, contratos y evidencias **confidenciales** | — |

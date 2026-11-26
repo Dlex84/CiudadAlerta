@@ -5,9 +5,9 @@ import { parsePeriod } from '../lib/dates.js';
 import { isUuid } from '../lib/tokens.js';
 import { intInRange } from '../lib/validate.js';
 
-export const ENTITIES = ['report', 'approval', 'approval_steps', 'incident', 'report_type', 'export', 'resource'];
+export const ENTITIES = ['report', 'approval', 'approval_steps', 'incident', 'report_type', 'export', 'resource', 'license_type', 'component', 'component_review', 'purchased_license', 'license_assignment', 'evidence', 'compliance_alert', 'alert_rule'];
 export const RESULTS = ['success', 'rejected'];
-const SECRET_KEY = /pass|token|hash|secret|cookie/i;
+const SECRET_KEY = /pass|token|hash|secret|cookie|licensekey|contractref/i;
 
 /** Nunca guarda contraseñas, tokens ni hashes, aunque lleguen por error en los valores. */
 export function redact(value) {

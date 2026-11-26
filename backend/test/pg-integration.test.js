@@ -26,7 +26,7 @@ describe('PostgreSQL (integración)', { skip: !url ? 'define TEST_DATABASE_URL p
 
   test('roles del sistema sembrados con su matriz de permisos', async () => {
     const res = await admin.get('/api/roles');
-    assert.deepEqual(res.data.items.map((r) => r.code), ['super_admin', 'admin', 'supervisor', 'operador', 'gerente', 'auditor', 'ciudadano']);
+    assert.deepEqual(res.data.items.map((r) => r.code), ['super_admin', 'admin', 'supervisor', 'operador', 'gerente', 'auditor', 'ciudadano', 'licenciamiento']);
     const sup = res.data.items.find((r) => r.code === 'supervisor');
     const perms = await admin.get(`/api/roles/${sup.id}/permissions`);
     assert.equal(perms.data.permissions.find((p) => p.module === 'auditoria').read, true);
@@ -161,4 +161,45 @@ describe('PostgreSQL (integración)', { skip: !url ? 'define TEST_DATABASE_URL p
     await assert.rejects(pool.query('DELETE FROM inventory_movements'), /solo inserción/);
   });
 
+  test('Épica 4: cupos atómicos, restricciones de integridad y registros de solo inserción', async () => {
+    const { loggedIn } = await import('./helpers/app.js');
+    const lic = (await loggedIn(app, 'licenciamiento', 'lic-pg@test.do')).c;
+    const pc = await lic.post('/api/licenses', { vendor: 'Esri', product: 'ArcGIS Pro', modality: 'suscripcion', metric: 'equipo', quantity: 3, startsOn: '2026-01-01', expiresOn: '2030-12-31' });
+    assert.match(pc.data.code, /^LIC-\d{4}$/, 'código desde la secuencia');
+
+    // RN-4.5: diez asignaciones simultáneas a equipos distintos sobre 3 licencias: solo 3 pasan.
+    const tries = await Promise.all(Array.from({ length: 10 }, (_, i) =>
+      lic.post(`/api/licenses/${pc.data.id}/assignments`, { targetType: 'equipo', targetName: `PC-${i}` })));
+    assert.equal(tries.filter((r) => r.status === 201).length, 3);
+    assert.equal(tries.filter((r) => r.data?.error?.code === 'no_licenses_available').length, 7);
+    const after = (await lic.get(`/api/licenses/${pc.data.id}`)).data;
+    assert.deepEqual([after.license.assigned, after.assignments.length], [3, 3]);
+
+    // La base rechaza por sí sola lo que las reglas prohíben, aunque alguien salte la API.
+    await assert.rejects(pool.query('UPDATE purchased_licenses SET assigned = quantity + 1 WHERE id = $1', [pc.data.id]), /check/i);
+    await assert.rejects(pool.query("UPDATE purchased_licenses SET expires_on = NULL WHERE id = $1", [pc.data.id]), /check/i);
+    const dup = after.assignments[0];
+    await assert.rejects(pool.query(
+      'INSERT INTO license_assignments (license_id, target_type, target_name, assigned_by) VALUES ($1, $2, $3, $4)',
+      [pc.data.id, 'equipo', dup.targetName.toUpperCase(), dup.assignedBy],
+    ), /license_assignments_active_uq/);
+
+    // HU-4.5 / HU-4.7 / HU-4.6: revisiones, evidencias y seguimiento de alertas son de solo inserción.
+    const c = (await lic.post('/api/software/components', { projectCode: 'ciudadalerta-backend', name: 'gpl-lib', version: '1.0.0', kind: 'libreria', licenseId: 'GPL-3.0-only' })).data.component;
+    await assert.rejects(pool.query("UPDATE software_components SET license_id = NULL WHERE id = $1", [c.id]), /check/i, 'no hay «confirmada» sin licencia');
+    await lic.post(`/api/software/components/${c.id}/reviews`, { decision: 'requiere_revision', obligations: 'Publicar código derivado', evaluation: 'Se consulta a asesoría legal antes de usarla.' });
+    await lic.post('/api/evidences', { title: 'Consulta legal', kind: 'informe', classification: 'interna', url: 'https://docs.example.do/consulta', componentId: c.id });
+    const scan = (await lic.post('/api/compliance/scan')).data;
+    assert.ok(scan.created >= 1);
+    assert.equal((await lic.post('/api/compliance/scan')).data.created, 0, 'no se duplican');
+    for (const table of ['component_reviews', 'license_evidences', 'compliance_alert_events']) {
+      await assert.rejects(pool.query(`DELETE FROM ${table}`), /solo inserción/, table);
+      await assert.rejects(pool.query(`UPDATE ${table} SET created_at = now()`), /solo inserción/, table);
+    }
+    const open = (await pool.query("SELECT kind, entity_type, entity_id FROM compliance_alerts WHERE status = 'pendiente' LIMIT 1")).rows[0];
+    await assert.rejects(pool.query(
+      "INSERT INTO compliance_alerts (kind, criticality, entity_type, entity_id, title, due_on) VALUES ($1, 'baja', $2, $3, 'x', current_date)",
+      [open.kind, open.entity_type, open.entity_id],
+    ), /compliance_alerts_open_uq/);
+  });
 });

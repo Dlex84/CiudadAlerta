@@ -1,5 +1,6 @@
 import { createApp } from './app.js';
 import { createLocalAvatarStorage } from './adapters/avatars.js';
+import { createLocalEvidenceStorage } from './adapters/evidence-files.js';
 import { createGeoIp } from './adapters/geoip.js';
 import { createMailer } from './adapters/mailer.js';
 import { loadConfig } from './config.js';
@@ -14,6 +15,7 @@ const { server, services } = createApp({
   mailer: await createMailer(config),
   geoip: await createGeoIp(),
   avatars: createLocalAvatarStorage(config.uploadsDir),
+  evidenceFiles: createLocalEvidenceStorage(config.uploadsDir),
 });
 
 server.listen(config.port, () => console.log(`CiudadAlerta API escuchando en http://localhost:${config.port}`));
@@ -26,7 +28,11 @@ if (config.alerts.scanMinutes > 0) {
       .scan()
       .then((r) => (r.sent || r.failed) && console.log(`Alertas: ${r.sent} enviadas, ${r.failed} fallidas, ${r.skipped} omitidas por repetidas`))
       .catch((err) => console.error('Falló la revisión de alertas:', err));
-  alertTimer = setInterval(runScan, config.alerts.scanMinutes * 60_000);
+  // HU-4.6: en la misma revisión se generan las alertas de cumplimiento de licencias.
+  const runCompliance = () => services.compliance.scan()
+    .then((r) => r.created && console.log(`Cumplimiento: ${r.created} alertas nuevas, ${r.skipped} omitidas por repetidas`))
+    .catch((err) => console.error('Falló la revisión de cumplimiento:', err));
+  alertTimer = setInterval(() => { runScan(); runCompliance(); }, config.alerts.scanMinutes * 60_000);
   alertTimer.unref();
 }
 

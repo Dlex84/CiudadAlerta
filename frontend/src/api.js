@@ -37,6 +37,8 @@ export const api = {
   put: (p, body) => request('PUT', p, { body }),
   delete: (p) => request('DELETE', p),
   upload: (p, file) => request('PUT', p, { raw: file, contentType: file.type }),
+  /** Sube un archivo como cuerpo crudo con POST (evidencias, HU-4.7). */
+  postFile: (p, file) => request('POST', p, { raw: file, contentType: file.type || 'application/octet-stream' }),
 };
 
 export const qs = (obj) => {

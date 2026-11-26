@@ -39,7 +39,7 @@ test('permisos: notación CRUD, mapa completo y super admin con todo', () => {
   const some = buildPermissionMap({ code: 'x' }, [{ module: 'usuarios', canCreate: false, canRead: true, canUpdate: false, canDelete: false }]);
   assert.equal(can(some, 'usuarios', 'read'), true);
   assert.equal(can(some, 'usuarios', 'update'), false);
-  assert.equal(SYSTEM_ROLES.length, 7); // + Operador, Gerente y Auditor (Épica 2)
+  assert.equal(SYSTEM_ROLES.length, 8); // + Operador, Gerente y Auditor (Épica 2) + Responsable de licenciamiento (Épica 4)
 });
 
 test('IP: privadas, IPv4 mapeada y X-Forwarded-For solo si se confía en el proxy', () => {

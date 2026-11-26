@@ -3,6 +3,18 @@ import { createApprovalStepsRepo, createApprovalsRepo } from './approvals.js';
 import { createChangeLogRepo } from './change-log.js';
 import { createIncidentEventsRepo, createIncidentsRepo } from './incidents.js';
 import { createMovementsRepo, createResourcesRepo } from './inventory.js';
+import {
+  createAlertEventsRepo,
+  createAlertRulesRepo,
+  createComplianceAlertsRepo,
+  createComponentReviewsRepo,
+  createComponentsRepo,
+  createEvidencesRepo,
+  createLicenseAssignmentsRepo,
+  createLicenseTypesRepo,
+  createPurchasedLicensesRepo,
+  createSoftwareProjectsRepo,
+} from './licensing.js';
 import { createAlertDeliveriesRepo, createNotificationsRepo } from './notifications.js';
 import {
   createAssignmentsRepo,
@@ -36,4 +48,15 @@ export const createPgRepos = (pool) => ({
   // Épica 3
   resources: createResourcesRepo(pool),
   movements: createMovementsRepo(pool),
+  // Épica 4
+  licenseTypes: createLicenseTypesRepo(pool),
+  softwareProjects: createSoftwareProjectsRepo(pool),
+  components: createComponentsRepo(pool),
+  componentReviews: createComponentReviewsRepo(pool),
+  purchasedLicenses: createPurchasedLicensesRepo(pool),
+  licenseAssignments: createLicenseAssignmentsRepo(pool),
+  evidences: createEvidencesRepo(pool),
+  alertRules: createAlertRulesRepo(pool),
+  complianceAlerts: createComplianceAlertsRepo(pool),
+  alertEvents: createAlertEventsRepo(pool),
 });

@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { loadConfig } from '../../src/config.js';
-import { seedOperationsCatalog, seedSystemRoles } from '../../src/domain/seed-data.js';
+import { seedLicensingCatalog, seedOperationsCatalog, seedSystemRoles } from '../../src/domain/seed-data.js';
 import { createApp } from '../../src/app.js';
 import { hashPassword } from '../../src/lib/passwords.js';
 import { createMemoryRepos } from './memory-repos.js';
@@ -11,6 +12,7 @@ const silent = { info() {}, error() {}, warn() {} };
 export async function startTestApp({ env = {}, clock, repos = createMemoryRepos(), mailer: customMailer } = {}) {
   await seedSystemRoles(repos);
   await seedOperationsCatalog(repos);
+  await seedLicensingCatalog(repos);
   const sent = [];
   const mailer = { async send(m) { if (customMailer) await customMailer.send(m); sent.push(m); } };
   const avatars = {
@@ -20,7 +22,13 @@ export async function startTestApp({ env = {}, clock, repos = createMemoryRepos(
   };
   const geoip = { lookup: (ip) => (ip === '203.0.113.9' ? { country: 'DO', city: 'Santo Domingo' } : { country: null, city: 'Red local' }) };
   const config = loadConfig({ NODE_ENV: 'test', RATE_LIMIT_MAX: '1000', APP_URL: 'http://localhost:5173', ALERT_SCAN_MINUTES: '0', ...env });
-  const { server, services } = createApp({ config, repos, mailer, geoip, avatars, clock, logger: silent });
+  // Evidencias (HU-4.7) en memoria, con el mismo contrato que src/adapters/evidence-files.js
+  const evidenceFiles = {
+    files: new Map(),
+    async save(buf, ext) { const key = `${randomUUID()}.${ext}`; this.files.set(key, buf); return key; },
+    async read(key) { return this.files.get(key) ?? null; },
+  };
+  const { server, services } = createApp({ config, repos, mailer, geoip, avatars, evidenceFiles, clock, logger: silent });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${server.address().port}`;
 
@@ -31,7 +39,7 @@ export async function startTestApp({ env = {}, clock, repos = createMemoryRepos(
   }
 
   return {
-    base, repos, services, config, sent, avatars, addUser, role,
+    base, repos, services, config, sent, avatars, evidenceFiles, addUser, role,
     client: () => createClient(base),
     close: () => new Promise((r) => server.close(r)),
   };
